@@ -1,0 +1,20 @@
+#!/usr/bin/ruby
+
+require 'tmpdir'
+require 'fileutils'
+require_relative '../lib/rubyfromexcel'
+
+spreadsheet = File.absolute_path(ARGV[0])
+ruby_version = File.absolute_path(ARGV[1] || "#{File.basename(ARGV[0],".*")}-ruby")
+
+unzipped_spreadsheet = Dir.mktmpdir
+
+# The spreadsheet needs to be unzipped before starting
+puts `unzip -uo #{spreadsheet} -d #{unzipped_spreadsheet}`
+
+RubyFromExcel::Process.new do
+  self.source_excel_directory = unzipped_spreadsheet
+  self.target_ruby_directory = ruby_version
+end.start!
+
+FileUtils.rm_rf(unzipped_spreadsheet)

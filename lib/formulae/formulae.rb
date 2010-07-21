@@ -1,0 +1,6 @@
+require_relative 'run/reference'
+require_relative 'run/excel_range'
+require_relative 'run/excel_matrix'
+require_relative 'run/excel_functions'
+require_relative 'compile/formula_builder'
+require_relative 'parse/formula_peg'

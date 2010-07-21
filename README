@@ -1,0 +1,22 @@
+= RubyFromExcel
+
+RubyFromExcel converts .xlxs files into pure ruby 1.9 code so that they can be executed without excel. i.e., whereas there are many libraries that allow you to read excel files, this one allows you to alter a cell on the sheet and then recalculate the values of all the other cells.
+
+We use it so that we can transform an excel spreadsheet into a ruby on rails application.
+
+We've made this library public now, because another open source project depends on it. That project works, but in other respects this library should be considered, at best, beta.
+
+In particular:
+1. It is intended for programmers rather than end users
+2. Only a few excel formulas have been implemented (just enough to convert the spreadsheets we have needed to convert). 
+3. It is ruby 1.9+ only
+4. The resulting code is not optimised
+5. It has a few examples of bad coding practice: in particular, it uses some singleton classes as global variables – bad things may happen if you use it to transform more than one excel at a time.
+
+Patches to fix these and other drawbacks gratefully received via http://github.com/tamc/rubyfromexcel
+
+To see how it works, look in the examples dir.
+
+This software is (c) 2010 Green on Black Ltd and distributed under the open source MIT [http://www.opensource.org/licenses/mit-license.php] licence. (See LICENCE for the wording).
+
+

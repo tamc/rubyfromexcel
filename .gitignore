@@ -1,1 +1,4 @@
 _darcs/
+examples/checkpoints/checkpoint/*
+examples/unzipped-sheets/*
+examples/ruby-versions/*

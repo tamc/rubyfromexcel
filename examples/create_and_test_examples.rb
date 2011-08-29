@@ -1,8 +1,6 @@
-require 'ruby-debug' ; Debugger.start
-
 require_relative '../lib/rubyfromexcel'
 
-$DEBUG = true
+$DEBUG = false
 
 def convert(basename)
     # Need the original spreadsheet

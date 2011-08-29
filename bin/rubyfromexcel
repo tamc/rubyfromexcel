@@ -15,6 +15,9 @@ puts `unzip -uo #{spreadsheet} -d #{unzipped_spreadsheet}`
 RubyFromExcel::Process.new do
   self.source_excel_directory = unzipped_spreadsheet
   self.target_ruby_directory = ruby_version
-end.start!
+  if ARGV[2]
+    self.checkpoint_directory = File.absolute_path(ARGV[2])
+  end
+end.start!(ARGV[3] ? ARGV[3].to_i : nil)  
 
 FileUtils.rm_rf(unzipped_spreadsheet)

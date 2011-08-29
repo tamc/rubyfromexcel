@@ -1,4 +1,8 @@
+require 'ruby-debug' ; Debugger.start
+
 require_relative '../lib/rubyfromexcel'
+
+$DEBUG = true
 
 def convert(basename)
     # Need the original spreadsheet
@@ -19,9 +23,17 @@ def convert(basename)
       self.source_excel_directory = unzipped_spreadsheet
       self.target_ruby_directory = ruby_version
       self.skip_tests = false
-      if basename == "pruning"
+      case basename
+      when "pruning"
         self.prune_except_output_sheets = ['Outputs']
-        self.convert_independent_of_input_sheets = ['Inputs']
+        self.convert_independent_of_input_sheets = ['Inputs']      
+      when "checkpoint"
+        self.checkpoint_directory =  File.join(File.dirname(__FILE__),'checkpoints','checkpoint')
+        # self.debug_dont_write_checkpoint_after_stage = 1
+      when "2050Model", "2050ModelCutDown"
+        self.prune_except_output_sheets = ['Intermediate output','Control']
+        self.convert_independent_of_input_sheets = ['Control']
+        # self.checkpoint_directory =  File.join(File.dirname(__FILE__),'checkpoints','2050Model')        
       end
     end.start!
 
@@ -31,7 +43,7 @@ end
 if ARGV[0]
   convert ARGV[0]
 else
-  %w{array-formulas complex-test namedReferenceTest sharedFormulaTest table-test pruning}.each do |basename|
+  %w{array-formulas complex-test namedReferenceTest sharedFormulaTest table-test pruning checkpoint}.each do |basename|
     convert basename
   end
 end

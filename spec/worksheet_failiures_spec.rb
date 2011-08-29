@@ -23,7 +23,7 @@ END
 
 worksheet_1_ruby =<<END
 # coding: utf-8
-# 
+# Outputs
 class Sheet1 < Spreadsheet
   def r9; @r9 ||= i9+j9+k9+p9+q9; end
   def r10; @r10 ||= i10+j10+k10+p10+q10; end

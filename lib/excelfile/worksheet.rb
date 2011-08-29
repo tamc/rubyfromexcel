@@ -1,9 +1,9 @@
 module RubyFromExcel
   class Worksheet
   
-    def self.from_file(filename)
+    def self.from_file(filename,workbook = nil)
       xml = File.open(filename) { |f| Nokogiri::XML(f).root }
-      worksheet = Worksheet.new(xml)
+      worksheet = Worksheet.new(xml,File.basename(filename,'.xml'),workbook)
       relationships = Relationships.for_file(filename)
       xml.css('tablePart').each do |table_reference_xml|
         table_xml = File.open(relationships[table_reference_xml['id']]) {|f| Nokogiri::XML(f).root }
@@ -17,7 +17,9 @@ module RubyFromExcel
     attr_reader   :named_references
     attr_accessor :workbook
   
-    def initialize(xml)
+    def initialize(xml,name = nil,workbook = nil)
+      self.name = name
+      self.workbook = workbook
       self.cells = {}
       @named_references = {}
       load_cells_from xml
@@ -58,6 +60,7 @@ module RubyFromExcel
     def work_out_dependencies
       cells.each do |reference,cell|
         cell.work_out_dependencies
+        RubyFromExcel.debug(:dependences,"#{name}.#{cell.reference} -> #{cell.dependencies.inspect}")
       end
     end
   

@@ -9,7 +9,7 @@ END
 
 simple_worksheet_ruby =<<END
 # coding: utf-8
-# 
+# Outputs
 class Sheet1 < Spreadsheet
   def a1; @a1 ||= excel_if(a2=="Hello","hello",sheet2.b4); end
   def a2; "A shared string"; end
@@ -20,7 +20,7 @@ END
 simple_worksheet_test =<<END
 # coding: utf-8
 require_relative '../spreadsheet'
-# 
+# Outputs
 describe 'Sheet1' do
   def sheet1; $spreadsheet ||= Spreadsheet.new; $spreadsheet.sheet1; end
 
@@ -44,7 +44,7 @@ end
 
 named_reference_simple_worksheet_ruby =<<END
 # coding: utf-8
-# 
+# Outputs
 class Sheet1 < Spreadsheet
   def a1; @a1 ||= excel_if(a2=="Hello","hello",sheet2.b4); end
   def a2; "A shared string"; end
@@ -69,7 +69,7 @@ shared_formula_worksheet_xml =<<END
 END
 shared_formula_worksheet_ruby =<<END
 # coding: utf-8
-# 
+# Outputs
 class Sheet1 < Spreadsheet
   def a1; 1.0; end
   def a2; @a2 ||= a1*2.0; end
@@ -88,44 +88,44 @@ END
 shared_formula_worksheet_test =<<END
 # coding: utf-8
 require_relative '../spreadsheet'
-# 
+# Outputs
 describe 'Sheet1' do
   def sheet1; $spreadsheet ||= Spreadsheet.new; $spreadsheet.sheet1; end
 
   it 'cell a2 should equal 2.0' do
-    sheet1.a2.should be_close(2.0,0.2)
+    sheet1.a2.should be_within(0.2).of(2.0)
   end
 
   it 'cell a3 should equal 4.0' do
-    sheet1.a3.should be_close(4.0,0.4)
+    sheet1.a3.should be_within(0.4).of(4.0)
   end
 
   it 'cell a4 should equal 8.0' do
-    sheet1.a4.should be_close(8.0,0.8)
+    sheet1.a4.should be_within(0.8).of(8.0)
   end
 
   it 'cell a5 should equal 16.0' do
-    sheet1.a5.should be_close(16.0,1.6)
+    sheet1.a5.should be_within(1.6).of(16.0)
   end
 
   it 'cell a6 should equal 32.0' do
-    sheet1.a6.should be_close(32.0,3.2)
+    sheet1.a6.should be_within(3.2).of(32.0)
   end
 
   it 'cell a7 should equal 64.0' do
-    sheet1.a7.should be_close(64.0,6.4)
+    sheet1.a7.should be_within(6.4).of(64.0)
   end
 
   it 'cell a8 should equal 128.0' do
-    sheet1.a8.should be_close(128.0,12.8)
+    sheet1.a8.should be_within(12.8).of(128.0)
   end
 
   it 'cell a9 should equal 256.0' do
-    sheet1.a9.should be_close(256.0,25.6)
+    sheet1.a9.should be_within(25.6).of(256.0)
   end
 
   it 'cell a10 should equal 512.0' do
-    sheet1.a10.should be_close(512.0,51.2)
+    sheet1.a10.should be_within(51.2).of(512.0)
   end
 
 end
@@ -147,7 +147,7 @@ END
 
 array_formula_worksheet_ruby =<<END
 # coding: utf-8
-# 
+# Outputs
 class Sheet1 < Spreadsheet
   def a1; 1.0; end
   def b1_array; @b1_array ||= a('a1','a5'); end
@@ -167,28 +167,28 @@ END
 array_formula_worksheet_test =<<END
 # coding: utf-8
 require_relative '../spreadsheet'
-# 
+# Outputs
 describe 'Sheet1' do
   def sheet1; $spreadsheet ||= Spreadsheet.new; $spreadsheet.sheet1; end
 
   it 'cell b1 should equal 1.0' do
-    sheet1.b1.should be_close(1.0,0.1)
+    sheet1.b1.should be_within(0.1).of(1.0)
   end
 
   it 'cell b2 should equal 2.0' do
-    sheet1.b2.should be_close(2.0,0.2)
+    sheet1.b2.should be_within(0.2).of(2.0)
   end
 
   it 'cell b3 should equal 3.0' do
-    sheet1.b3.should be_close(3.0,0.3)
+    sheet1.b3.should be_within(0.30000000000000004).of(3.0)
   end
 
   it 'cell b4 should equal 4.0' do
-    sheet1.b4.should be_close(4.0,0.4)
+    sheet1.b4.should be_within(0.4).of(4.0)
   end
 
   it 'cell b5 should equal 5.0' do
-    sheet1.b5.should be_close(5.0,0.5)
+    sheet1.b5.should be_within(0.5).of(5.0)
   end
 
 end
@@ -344,7 +344,7 @@ END
 
 table_worksheet_ruby =<<END
 # coding: utf-8
-# 
+# Outputs
 class Sheet1 < Spreadsheet
   def b3; "ColA"; end
   def c3; "ColB"; end
@@ -376,7 +376,7 @@ END
 table_worksheet_test =<<END
 # coding: utf-8
 require_relative '../spreadsheet'
-# 
+# Outputs
 describe 'Sheet1' do
   def sheet1; $spreadsheet ||= Spreadsheet.new; $spreadsheet.sheet1; end
 
@@ -385,63 +385,63 @@ describe 'Sheet1' do
   end
 
   it 'cell h3 should equal 3.0' do
-    sheet1.h3.should be_close(3.0,0.3)
+    sheet1.h3.should be_within(0.30000000000000004).of(3.0)
   end
 
   it 'cell c4 should equal 4.0' do
-    sheet1.c4.should be_close(4.0,0.4)
+    sheet1.c4.should be_within(0.4).of(4.0)
   end
 
   it 'cell d4 should equal 3.0' do
-    sheet1.d4.should be_close(3.0,0.3)
+    sheet1.d4.should be_within(0.30000000000000004).of(3.0)
   end
 
   it 'cell f4 should equal 8.0' do
-    sheet1.f4.should be_close(8.0,0.8)
+    sheet1.f4.should be_within(0.8).of(8.0)
   end
 
   it 'cell h4 should equal 3.0' do
-    sheet1.h4.should be_close(3.0,0.3)
+    sheet1.h4.should be_within(0.30000000000000004).of(3.0)
   end
 
   it 'cell c5 should equal 8.0' do
-    sheet1.c5.should be_close(8.0,0.8)
+    sheet1.c5.should be_within(0.8).of(8.0)
   end
 
   it 'cell d5 should equal 6.0' do
-    sheet1.d5.should be_close(6.0,0.6)
+    sheet1.d5.should be_within(0.6000000000000001).of(6.0)
   end
 
   it 'cell f5 should equal 8.0' do
-    sheet1.f5.should be_close(8.0,0.8)
+    sheet1.f5.should be_within(0.8).of(8.0)
   end
 
   it 'cell c6 should equal 12.0' do
-    sheet1.c6.should be_close(12.0,1.2)
+    sheet1.c6.should be_within(1.2000000000000002).of(12.0)
   end
 
   it 'cell d6 should equal 9.0' do
-    sheet1.d6.should be_close(9.0,0.9)
+    sheet1.d6.should be_within(0.9).of(9.0)
   end
 
   it 'cell c7 should equal 8.0' do
-    sheet1.c7.should be_close(8.0,0.8)
+    sheet1.c7.should be_within(0.8).of(8.0)
   end
 
   it 'cell d7 should equal 3.0' do
-    sheet1.d7.should be_close(3.0,0.3)
+    sheet1.d7.should be_within(0.30000000000000004).of(3.0)
   end
 
   it 'cell b10 should equal 6.0' do
-    sheet1.b10.should be_close(6.0,0.6)
+    sheet1.b10.should be_within(0.6000000000000001).of(6.0)
   end
 
   it 'cell c10 should equal 8.0' do
-    sheet1.c10.should be_close(8.0,0.8)
+    sheet1.c10.should be_within(0.8).of(8.0)
   end
 
   it 'cell d10 should equal 3.0' do
-    sheet1.d10.should be_close(3.0,0.3)
+    sheet1.d10.should be_within(0.30000000000000004).of(3.0)
   end
 
 end

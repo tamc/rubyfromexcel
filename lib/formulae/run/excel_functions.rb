@@ -1,5 +1,6 @@
 class Numeric
   def number_like?; true; end
+  def array_formula_offset(i,j); self; end
 end
 
 class String
@@ -102,7 +103,51 @@ module RubyFromExcel
       @worksheets[worksheet_name] = worksheet
       worksheet
     end
-  
+    
+    def round(number,decimal_places)
+      return number if iserr(number)
+      return decimal_places if iserr(decimal_places)
+      return :na unless number.is_a?(Numeric)
+      return :na unless decimal_places.is_a?(Numeric)
+      number.round(decimal_places)
+    end
+    
+    def roundup(number,decimal_places)
+      return number if iserr(number)
+      return decimal_places if iserr(decimal_places)
+      return :na unless number.is_a?(Numeric)
+      return :na unless decimal_places.is_a?(Numeric)
+       (number * 10**decimal_places).ceil.to_f / 10**decimal_places
+    end
+
+    def rounddown(number,decimal_places)
+      return number if iserr(number)
+      return decimal_places if iserr(decimal_places)
+      return :na unless number.is_a?(Numeric)
+      return :na unless decimal_places.is_a?(Numeric)
+       (number * 10**decimal_places).floor.to_f / 10**decimal_places
+    end
+    
+    def mod(number,divisor)
+      return number if iserr(number)
+      return divisor if iserr(divisor)
+      return :na unless number.is_a?(Numeric)
+      return :na unless divisor.is_a?(Numeric)
+      number % divisor
+    end
+    
+    def pmt(rate,periods,principal)
+      -principal*(rate*((1+rate)**periods))/(((1+rate)**periods)-1)
+    end
+    
+    def npv(rate,*cashflows)
+      discount_factor = 1
+      flatten_and_inject(cashflows) do |pv,cashlfow|
+        discount_factor = discount_factor * (1 + rate)
+        cashlfow.is_a?(Numeric) ? pv + (cashlfow / discount_factor) : pv
+      end
+    end
+            
     def sum(*args)
       flatten_and_inject(args) do |counter,arg|
         arg.is_a?(Numeric) ? counter + arg.to_f : counter
@@ -136,7 +181,15 @@ module RubyFromExcel
       end
       accumulator = 0
       sum_range.each_with_index do |potential_sum,i|
-        next unless checks.all? { |c| c.first[i] == c.last }
+        next unless checks.all? do |c|
+          if c.last =~ /^>([0-9.]+)$/
+            c.first[i].to_f > $1.to_f
+          elsif c.last =~ /^<([0-9.]+)$/
+            c.first[i].to_f < $1.to_f
+          else
+            c.first[i] == c.last
+          end
+        end
         next unless potential_sum.is_a?(Numeric)
         accumulator = accumulator + potential_sum
       end
@@ -154,6 +207,8 @@ module RubyFromExcel
       end.inject(0) do |product,total| 
         total + product
       end
+    rescue IndexError
+      return :value
     end
   
     def choose(choice,*choices)
@@ -166,6 +221,48 @@ module RubyFromExcel
         arg.is_a?(Numeric) && !arg.is_a?(Empty) ? counter + 1 : counter
       end
     end
+    
+    def countif(check_range,criteria,count_range = check_range)
+      countifs(count_range,check_range,criteria)
+    end
+    
+    def countifs(count_range,*args)
+      return :na if iserr(count_range)
+      return :na if args.any? { |c| iserr(c) }
+      if count_range.is_a?(ExcelRange)
+        return :na unless count_range.single_row_or_column?
+        count_range = count_range.to_a
+      else
+        count_range = [count_range]
+      end
+      checks = Hash[*args].to_a.map do |check|
+        check_range, check_value = check.first, check.last
+        if check_range.is_a?(ExcelRange)
+          return :na unless check_range.single_row_or_column?
+          check_range = check_range.to_a
+        else
+          check_range = [check_range]
+        end
+        check_range = check_range.map { |c| c.to_s.downcase }
+        check_value = check_value.to_s.downcase
+        [check_range,check_value]
+      end
+      accumulator = 0
+      count_range.each_with_index do |potential_count,i|
+        next unless checks.all? do |c|
+          if c.last =~ /^>([0-9.]+)$/
+            c.first[i].to_f > $1.to_f
+          elsif c.last =~ /^<([0-9.]+)$/
+            c.first[i].to_f < $1.to_f
+          else
+            c.first[i] == c.last
+          end
+        end
+        next unless potential_count.is_a?(Numeric) && !potential_count.is_a?(Empty)
+        accumulator = accumulator + 1
+      end
+      accumulator
+    end
   
     def counta(*args)
       flatten_and_inject(args) do |counter,arg|
@@ -176,9 +273,11 @@ module RubyFromExcel
     def max(*args)
       args = args.map { |arg| arg.respond_to?(:to_a) ? arg.to_a : arg }
       args.flatten!
+      if (error = args.find { |arg| iserr(arg) }) 
+        return error
+      end
       args.delete_if { |arg| !arg.kind_of?(Numeric) }
       args.delete_if { |arg| arg.kind_of?(Empty) }
-      return error if error = args.find { |arg| iserr(arg) }
       args.max
     end
   
@@ -311,13 +410,22 @@ module RubyFromExcel
     end
   
     def iserr(arg)
-      arg.is_a? Symbol
+      return true if arg.is_a? Symbol
+      return true if arg.respond_to?(:nan?) && arg.nan?
+      return true if arg.respond_to?(:infinite?) && arg.infinite?
+      false
     end
   
-    def excel_if(condition,true_value,false_value)
+    def excel_if(condition,true_value,false_value = false)
       condition ? true_value : false_value
     end
-  
+    
+    def excel_comparison(left,comparison,right)
+      left = left.downcase if left.is_a?(String)
+      right = right.downcase if right.is_a?(String)
+      left.send(comparison,right)
+    end
+    
     def iferror(value,value_if_error)
       iserr(value) ? value_if_error : value
     rescue  ZeroDivisionError => e

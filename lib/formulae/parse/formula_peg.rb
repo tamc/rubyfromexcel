@@ -13,7 +13,7 @@ class Formula < RubyPeg
   end
   
   def expression
-    string_join || arithmetic || comparison || thing
+    string_join || comparison || arithmetic || thing
   end
   
   def thing
@@ -38,7 +38,7 @@ class Formula < RubyPeg
   
   def string_join
     node :string_join do
-      thing && one_or_more { (space && ignore { terminal("&") } && space && thing) }
+      (arithmetic || thing) && one_or_more { (space && ignore { terminal("&") } && space && (arithmetic || thing)) }
     end
   end
   
@@ -50,7 +50,7 @@ class Formula < RubyPeg
   
   def comparison
     node :comparison do
-      thing && space && comparator && space && thing
+      (arithmetic || thing) && space && comparator && space && (arithmetic || thing)
     end
   end
   
@@ -62,11 +62,15 @@ class Formula < RubyPeg
   
   def string
     node :string do
-      ignore { terminal("\"") } && terminal(/[^"]*/) && ignore { terminal("\"") }
+      ignore { terminal("\"") } && terminal(/(""|[^"])*/) && ignore { terminal("\"") }
     end
   end
   
   def any_reference
+    external_reference || any_internal_reference
+  end
+  
+  def any_internal_reference
     table_reference || local_table_reference || quoted_sheet_reference || sheet_reference || sheetless_reference
   end
   
@@ -88,20 +92,30 @@ class Formula < RubyPeg
     end
   end
   
+  def external_reference
+    node :external_reference do
+      terminal(/\[\d+\]!?/) && any_internal_reference
+    end
+  end
+  
   def table_reference
     node :table_reference do
-      table_name && ignore { terminal("[") } && (complex_structured_reference || simple_structured_reference) && ignore { terminal("]") }
+      table_name && ignore { terminal("[") } && (range_structured_reference || complex_structured_reference || simple_structured_reference) && ignore { terminal("]") }
     end
   end
   
   def local_table_reference
     node :local_table_reference do
-      ignore { terminal("[") } && (complex_structured_reference || overly_structured_reference || simple_structured_reference) && ignore { terminal("]") }
+      ignore { terminal("[") } && (range_structured_reference || complex_structured_reference || overly_structured_reference || simple_structured_reference) && ignore { terminal("]") }
     end
   end
   
   def table_name
-    terminal(/[.a-zA-Z0-9]+/)
+    terminal(/[.a-zA-Z0-9_]+/)
+  end
+  
+  def range_structured_reference
+    terminal(/\[[^\u005d]*\],\[[^\u005d]*\]:\[[^\u005d]*\]/)
   end
   
   def complex_structured_reference
@@ -118,7 +132,7 @@ class Formula < RubyPeg
   
   def named_reference
     node :named_reference do
-      terminal(/[a-zA-Z][\w_.]+/)
+      terminal(/[#a-zA-Z][\w_.!]+/)
     end
   end
   
@@ -171,11 +185,11 @@ class Formula < RubyPeg
   end
   
   def column
-    terminal(/\$?[A-Z]+/)
+    terminal(/\$?[A-Za-z]{1,3}/)
   end
   
   def reference
-    terminal(/\$?[A-Z]+\$?[0-9]+/)
+    terminal(/\$?[A-Za-z]{1,3}\$?[0-9]+(?![0-9A-Za-z_])/)
   end
   
   def boolean

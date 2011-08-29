@@ -6,6 +6,7 @@ module RubyFromExcel
     def initialize(worksheet,xml = nil)
       self.worksheet = worksheet
       parse_xml xml
+      debug
     end
   
     def parse_xml(xml)
@@ -37,7 +38,7 @@ module RubyFromExcel
   
     def test
       return "== #{value}" if xml_type
-      "be_close(#{value.to_f},#{tolerance_for(value.to_f)})"
+      "be_within(#{tolerance_for(value.to_f)}).of(#{value.to_f})"
     end
   
     def tolerance_for(value,tolerance = 0.1, maximum = 1e-8)
@@ -93,6 +94,10 @@ module RubyFromExcel
     def inspect
       "(cell: #{to_s} with formula:#{respond_to?(:ast) ? ast.inspect : "na"} and value '#{value}' of type '#{xml_type}')"
     end
-  
+    
+    def debug
+      RubyFromExcel.debug(:cells,"#{worksheet.name}.#{reference} -> #{} -> #{xml_value} (#{xml_type})")
+    end
+    
   end
 end

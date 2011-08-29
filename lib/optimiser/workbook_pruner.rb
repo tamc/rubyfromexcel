@@ -5,13 +5,14 @@ module RubyFromExcel
   
     def initialize(workbook)
       @workbook = workbook
+      @depends_on_input_sheet_cache = {}
     end
   
     def prune_cells_not_needed_for_output_sheets(*output_sheet_names)
       @cells_to_keep = {}
-      workbook.work_out_dependencies
       @output_sheet_names = output_sheet_names
       find_dependencies_of output_sheet_names
+      # breakpoint
       delete_cells_that_we_dont_want_to_keep
       cells_to_keep = nil # So that we can garbage collect
       GC.start
@@ -30,18 +31,27 @@ module RubyFromExcel
     end
   
     def keep_dependencies_for(cell)
+      # p [cell.to_s,cell.dependencies]
       return unless cell
+      RubyFromExcel.debug(:pruning_keep,"#{cell.worksheet.name}.#{cell.reference}")
       return if cells_to_keep.has_key?(cell.to_s)
       cells_to_keep[cell.to_s] = cell
       cell.dependencies.each do |reference|
-        keep_dependencies_for workbook.cell(reference)
+        c = workbook.cell(reference)
+        RubyFromExcel.debug(:pruning_missing,"#{reference}")
+        keep_dependencies_for c
       end
     end
   
     def delete_cells_that_we_dont_want_to_keep
       workbook.worksheets.each do |name,sheet|
         sheet.cells.delete_if do |reference,cell|
-          !cells_to_keep.has_key?(cell.to_s)
+          if cells_to_keep.has_key?(cell.to_s)
+            false
+          else
+            RubyFromExcel.debug(:pruning_delete,"#{name}.#{reference}")
+            true
+          end
         end
       end
     end
@@ -54,18 +64,24 @@ module RubyFromExcel
         sheet.cells.each do |reference,cell|
           next if cell.is_a?(ValueCell)
           unless depends_on_input_sheets?(cell,input_sheet_names)
-            # puts "converting #{cell}"
             count = count + 1
+            RubyFromExcel.debug(:pruning_replace,"#{name}.#{reference} -> #{cell.original_formula.inspect} -> #{cell.value.inspect}")
             sheet.replace_cell(reference,ValueCell.for(cell))
           end
         end
       end
       puts "#{count} formula cells replaced with their values"
       GC.start
-      prune_cells_not_needed_for_output_sheets(*output_sheet_names)
     end
   
     def depends_on_input_sheets?(cell,input_sheet_names,stack_level = 0)
+      return @depends_on_input_sheet_cache[cell] if @depends_on_input_sheet_cache.has_key?(cell)
+      @depends_on_input_sheet_cache[cell] = work_out_if_depends_on_input_sheets(cell,input_sheet_names,stack_level)
+      work_out_if_depends_on_input_sheets(cell,input_sheet_names,stack_level)
+    end
+    
+    def work_out_if_depends_on_input_sheets(cell,input_sheet_names,stack_level)
+      #p [cell.to_s,cell.dependencies]
       return true if stack_level > 100
       return false unless cell
       return true if input_sheet_names.include?(cell.worksheet.variable_name)

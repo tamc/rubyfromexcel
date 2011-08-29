@@ -16,5 +16,13 @@ module RubyFromExcel
     def ruby_value
       "@#{reference.to_ruby} ||= #{shared_formula.visit(SharedFormulaBuilder.new(self, shared_formula_offset))}"
     end
+    
+    def debug
+      # Await the sharing formula
+    end
+    
+    def debug_after_sharing
+      RubyFromExcel.debug(:cells,"#{worksheet.name}.#{reference} -> shared -> #{original_formula.inspect} -> #{shared_formula.inspect} offset #{shared_formula_offset.inspect} -> #{xml_value} (#{xml_type}) -> #{value_for_including.inspect}")
+    end
   end
 end

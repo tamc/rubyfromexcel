@@ -29,6 +29,8 @@ module RubyFromExcel
     def array_formula_onto_cell(cell)
       cell.array_formula_reference = self.array_formula_reference
       cell.array_formula_offset = offset_from(cell)
+      cell.original_formula = self.original_formula
+      cell.debug_after_sharing
     end
   
     def offset_from(cell)
@@ -62,6 +64,10 @@ module RubyFromExcel
   
     def ruby_array_value
       ast.visit(ArrayFormulaBuilder.new(self))
+    end
+    
+    def debug
+      RubyFromExcel.debug(:cells,"#{worksheet.name}.#{reference} -> array -> #{original_formula.inspect} -> #{ast.inspect} offset #{array_formula_offset.inspect} -> #{xml_value} (#{xml_type}) -> #{value_for_including.inspect}")
     end
   end
 end

@@ -17,6 +17,7 @@ module RubyFromExcel
   
     def sheet_reference(sheet_name,reference)
       sheet_name = $1 if sheet_name.to_s =~ /^(\d+)\.0+$/
+      puts "Warning, #{formula_cell} refers to an external workbook in '#{sheet_name}'" if sheet_name =~ /^\[\d+\]/
       using_worksheet(SheetNames.instance[sheet_name]) do
         reference.visit(self)
       end
@@ -59,7 +60,9 @@ module RubyFromExcel
     def function(name,*args)
       if name == "INDIRECT"
         args.first.visit(self)
-        dependencies_for FormulaBuilder.new(formula_cell).indirect_function(args.first)
+        reference_for_indirect = FormulaBuilder.new(formula_cell).indirect_function(args.first)
+        # puts "INDIRECT REFERENCE: #{[args.first.inspect, reference_for_indirect]}" # if reference_for_indirect.to_s.start_with?(":")
+        d = dependencies_for(reference_for_indirect)
       else
         args.each { |a| a.visit(self) }
       end
@@ -68,7 +71,7 @@ module RubyFromExcel
     def reference_for_name(name)
       worksheet.named_references[name.to_method_name] || 
       workbook.named_references[name.to_method_name] || 
-      (raise Exception.new("#{name} not found"))
+      (raise Exception.new("#{name} in #{formula_cell} not found"))
     end
   
     def workbook
@@ -77,7 +80,7 @@ module RubyFromExcel
   
     def using_worksheet(sheet_name)
       original_worksheet = self.worksheet
-      self.worksheet = workbook.worksheets[sheet_name] || (raise Exception.new("#{sheet_name} not found"))
+      self.worksheet = workbook.worksheets[sheet_name] || (raise Exception.new("#{sheet_name} in #{formula_cell} not found"))
       yield
       self.worksheet = original_worksheet
     end

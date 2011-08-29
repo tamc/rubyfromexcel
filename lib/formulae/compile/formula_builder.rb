@@ -68,7 +68,9 @@ module RubyFromExcel
       "(#{expression.map{ |e| e.visit(self)}.join})"
     end
   
-    def named_reference(name, worksheet = formula_cell.worksheet)
+    def named_reference(name, worksheet = nil)
+      worksheet ||= formula_cell ? formula_cell.worksheet : nil
+      return ":name" unless worksheet
       worksheet.named_references[name.to_method_name] || 
       worksheet.workbook.named_references[name.to_method_name] ||
       ":name"
@@ -90,11 +92,22 @@ module RubyFromExcel
       "r(#{cell(start_area)},#{cell(end_area)})"
     end
   
+    def external_reference(external_reference_number,remainder_of_reference)
+      puts "Warning, external references not supported (#{formula_cell}) #{remainder_of_reference}"
+      remainder_of_reference.visit(self)
+    end
+  
     def sheet_reference(sheet_name,reference)
       sheet_name = $1 if sheet_name.to_s =~ /^(\d+)\.0+$/
+      if sheet_name =~ /^\[\d+\]/
+        puts "Warning, #{formula_cell} refers to an external workbook in '#{sheet_name}'"
+        sheet_name.gsub!(/^\[\d+\]/,'')
+      end
       if reference.type == :named_reference
+        return ":name" unless formula_cell
         worksheet = formula_cell.worksheet.workbook.worksheets[SheetNames.instance[sheet_name]]
-        raise Exception.new("#{sheet_name.inspect} not found in #{SheetNames.instance} and therefore in #{formula_cell.worksheet.workbook.worksheets.keys}") unless worksheet
+        # raise Exception.new("#{sheet_name.inspect} not found in #{SheetNames.instance} and therefore in #{formula_cell.worksheet.workbook.worksheets.keys}") unless worksheet
+        return ":ref" unless worksheet
         named_reference(reference.first,worksheet)
       else
         "#{SheetNames.instance[sheet_name]}.#{reference.visit(self)}"
@@ -118,11 +131,11 @@ module RubyFromExcel
     end
   
     def string_join(*strings)
-      strings.map { |s| s.type == :string ? s.visit(self) : "#{s.visit(self)}.to_s"}.join('+')
+      strings.map { |s| s.type == :string ? s.visit(self) : "(#{s.visit(self)}).to_s"}.join('+')
     end
   
     def string(string_text)
-      string_text.inspect
+      string_text.gsub('""','"').inspect
     end
     
     def function(name,*args)
@@ -157,22 +170,29 @@ module RubyFromExcel
     excel_function :sumifs
     excel_function :subtotal
     excel_function :sumproduct
+    excel_function :round
+    excel_function :roundup
+    excel_function :rounddown
+    excel_function :mod
+    excel_function :pmt
+    excel_function :npv
+    excel_function :countif
   
     def standard_function(name_to_use_in_ruby,args)
       "#{name_to_use_in_ruby}(#{args.map {|a| a.visit(self) }.join(',')})"
     end
   
     def index_function(*args)
-      attempt_to_caclulate_index(*args) ||
+      attempt_to_calculate_index(*args) ||
       standard_function("index",args)
     end
   
     def match_function(*args)
-      attempt_to_caclulate_match(*args) ||
+      attempt_to_calculate_match(*args) ||
       standard_function("match",args)
     end
   
-    def attempt_to_caclulate_index(lookup_array,row_number,column_number = :ignore)
+    def attempt_to_calculate_index(lookup_array,row_number,column_number = :ignore)
       lookup_array = range_for(lookup_array)
       row_number = single_value_for(row_number)
       column_number = single_value_for(column_number) unless column_number == :ignore
@@ -191,13 +211,13 @@ module RubyFromExcel
       return nil
     end
   
-    def attempt_to_caclulate_match(lookup_value,lookup_array,match_type = :ignore)
+    def attempt_to_calculate_match(lookup_value,lookup_array,match_type = :ignore)
         lookup_value = single_value_for(lookup_value)
         lookup_array = range_for(lookup_array)
         match_type = single_value_for(match_type) unless match_type == :ignore
         return nil unless lookup_value
         return nil unless lookup_array
-        return nil unless match_type
+        return nil if match_type == nil
         result = nil
         if match_type == :ignore
           result = FunctionCompiler.new(formula_cell.worksheet).match(lookup_value,lookup_array).to_f
@@ -212,8 +232,8 @@ module RubyFromExcel
     def single_value_for(ast)
       return nil unless ast.respond_to?(:visit)
       ast = ast.visit(self)
-      return ast if ast == "true"
-      return ast if ast == "false"
+      return true if ast == "true"
+      return false if ast == "false"
       return ast if ast.is_a?(Numeric)
       return ast if ast =~ /^[0-9.]+$/
       return $1 if ast =~ /^"([^"]*)"$/
@@ -241,6 +261,7 @@ module RubyFromExcel
     end
   
     def attempt_to_parse_indirect(text_formula)
+      #puts "Attempting to parse indirect #{text_formula.inspect}"
       return parse_and_visit(text_formula.first) if text_formula.type == :string
       return nil unless text_formula.type == :string_join
       reformated_indirect = text_formula.map do |non_terminal|
@@ -258,6 +279,7 @@ module RubyFromExcel
             end
           when :sheet_reference, :named_reference, :table_reference, :local_table_reference
             reference = non_terminal.visit(self)
+            # puts reference
             return nil unless reference =~ /^(sheet\d+)\.([a-z]+\d+)$/
             cell = formula_cell.worksheet.workbook.worksheets[$1].cell($2)
             if cell
@@ -273,17 +295,19 @@ module RubyFromExcel
           non_terminal
         end
       end
+      # puts "Reformatted indirect: #{reformated_indirect.join}"
       parse_and_visit(reformated_indirect.join)
     end
   
     def parse_and_visit(text)
       ast = Formula.parse(text)
+      # p [text,ast]
       return ":name" unless ast
       ast.visit(self.class.new(formula_cell))
     end
   
-    def comparison(*strings)
-      strings.map { |s| s.visit(self) }.join
+    def comparison(left,comparator,right)
+      "excel_comparison(#{left.visit(self)},\"#{comparator.visit(self)}\",#{right.visit(self)})"
     end
   
     def arithmetic(*strings)

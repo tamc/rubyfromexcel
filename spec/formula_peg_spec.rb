@@ -1,12 +1,16 @@
 require_relative 'spec_helper'
 
 require 'textpeg2rubypeg'
-text_peg = IO.readlines(File.join(File.dirname(__FILE__),'..','lib','formulae','parse','formula_peg.txt')).join
-ast = TextPeg.parse(text_peg)
+text_peg = File.join(File.dirname(__FILE__),'..','lib','formulae','parse','formula_peg.txt')
+ruby_peg = File.join(File.dirname(__FILE__),'..','lib','formulae','parse','formula_peg.rb') 
+ast = TextPeg.parse(IO.readlines(text_peg).join)
 # puts ast.to_ast
 # exit
 builder = TextPeg2RubyPeg.new
 ruby = ast.visit(builder)
+File.open(ruby_peg,'w') do |f|
+  f.puts ruby
+end
 Kernel.eval(ruby)
 
 describe Formula do
@@ -52,6 +56,7 @@ describe Formula do
     Formula.parse('sheet1!$A$1:$Z$1').to_ast.should == [:formula,[:sheet_reference,'sheet1',[:area,'$A$1','$Z$1']]]
     Formula.parse('sheet1!$1:$1000').to_ast.should == [:formula,[:sheet_reference,'sheet1',[:row_range,'$1','$1000']]]
     Formula.parse('sheet1!$C:$AZ').to_ast.should == [:formula,[:sheet_reference,'sheet1',[:column_range,'$C','$AZ']]]
+    Formula.parse('Control!#REF!').to_ast.should == [:formula,[:sheet_reference,'Control',[:named_reference,'#REF!']]]
   end
   
   it "returns references to other sheets with extended names" do
@@ -77,6 +82,8 @@ describe Formula do
   it "returns strings" do
     Formula.parse('"A handy string"').to_ast.should == [:formula,[:string,"A handy string"]]
     Formula.parse('"$A$1"').to_ast.should == [:formula,[:string,"$A$1"]]  
+    Formula.parse('"Double quotes "" do not end strings."').to_ast.should ==  [:formula,[:string,"Double quotes \"\" do not end strings."]]
+    Formula.parse('"A ""quote"""').to_ast.should ==  [:formula,[:string,"A \"\"quote\"\""]]
   end
   
   it "returns string joins" do
@@ -85,6 +92,9 @@ describe Formula do
     Formula.parse('$A$1&"A handy string"&$A$1').to_ast.should == [:formula,[:string_join,[:cell,'$A$1'],[:string,"A handy string"],[:cell,'$A$1'],]]
     Formula.parse('$A$1&$A$1&$A$1').to_ast.should == [:formula,[:string_join,[:cell,'$A$1'],[:cell,'$A$1'],[:cell,'$A$1'],]]
     Formula.parse('"GW"&ISERR($AA$1)').to_ast.should == [:formula,[:string_join,[:string,'GW'],[:function,'ISERR',[:cell,'$AA$1']]]]
+    Formula.parse("\"Approximate total \"&$F$87&\" GW locations\"").to_ast.should == [:formula, [:string_join, [:string, "Approximate total "], [:cell, "$F$87"],  [:string, " GW locations"]]]
+    Formula.parse("\"Approximate total \"&$F$87/$F$87&\" GW locations\"").to_ast.should == [:formula, [:string_join, [:string, "Approximate total "], [:arithmetic,[:cell,'$F$87'],[:operator,"/"],[:cell,'$F$87']],  [:string, " GW locations"]]]
+    Formula.parse("\"Approximate total \"&$F$87/Unit.GW&\" GW locations\"").to_ast.should == [:formula, [:string_join, [:string, "Approximate total "], [:arithmetic,[:cell,'$F$87'],[:operator,"/"],[:named_reference,'Unit.GW']],  [:string, " GW locations"]]]
   end
   
   it "returns numeric operations" do
@@ -108,6 +118,8 @@ describe Formula do
     Formula.parse('$A$1>=$A$2').to_ast.should == [:formula,[:comparison,[:cell,'$A$1'],[:comparator,">="],[:cell,'$A$2']]]
     Formula.parse('$A$1<=$A$2').to_ast.should == [:formula,[:comparison,[:cell,'$A$1'],[:comparator,"<="],[:cell,'$A$2']]]
     Formula.parse('$A$1<>$A$2').to_ast.should == [:formula,[:comparison,[:cell,'$A$1'],[:comparator,"<>"],[:cell,'$A$2']]]
+    Formula.parse("IF(1+2>0,1,0)").to_ast.should == [:formula, [:function, "IF", [:comparison, [:arithmetic, [:number, "1"], [:operator, "+"], [:number, "2"]], [:comparator, ">"], [:number, "0"]], [:number, "1"], [:number, "0"]]]
+    Formula.parse("IF(G431-F431+F450>0,G431-F431+F450,0)").to_ast.should == [:formula, [:function, "IF", [:comparison, [:arithmetic, [:cell, "G431"], [:operator, "-"], [:cell, "F431"], [:operator, "+"], [:cell, "F450"]], [:comparator, ">"], [:number, "0"]], [:arithmetic, [:cell, "G431"], [:operator, "-"], [:cell, "F431"], [:operator, "+"], [:cell, "F450"]], [:number, "0"]]]
   end
   
   it "returns functions" do
@@ -124,6 +136,7 @@ describe Formula do
     Formula.parse("I.b.Outputs[2007.0]").to_ast.should == [:formula,[:table_reference,'I.b.Outputs','2007.0']]
     Formula.parse("INDEX(Global.Assumptions[Households], MATCH(F$321,Global.Assumptions[Year], 0))").to_ast.should == [:formula, [:function, "INDEX", [:table_reference, "Global.Assumptions", "Households"], [:function, "MATCH", [:cell, "F$321"], [:table_reference, "Global.Assumptions", "Year"], [:number, "0"]]]]
     Formula.parse("MAX(-SUM(I.a.Inputs[2007])-F$80,0)").to_ast.should == [:formula, [:function, "MAX", [:arithmetic, [:prefix, "-", [:function, "SUM", [:table_reference, "I.a.Inputs", "2007"]]], [:operator, "-"], [:cell, "F$80"]], [:number, "0"]]]
+    Formula.parse('DeptSales_101[Sale Amount]').to_ast.should  == [:formula,[:table_reference,'DeptSales_101','Sale Amount']]
   end
   
   it "returns booleans" do
@@ -140,6 +153,8 @@ describe Formula do
   
   it "returns named references" do
     Formula.parse('EF.NaturalGas.N2O').to_ast.should == [:formula,[:named_reference,'EF.NaturalGas.N2O']]
+    Formula.parse('USD2009_').to_ast.should == [:formula,[:named_reference,'USD2009_']]
+    Formula.parse('(F47*(USD2009_/Unit.boe))*(Price2009)').to_ast.should == [:formula, [:arithmetic, [:brackets, [:arithmetic, [:cell, "F47"], [:operator, "*"], [:brackets, [:arithmetic, [:named_reference, "USD2009_"], [:operator, "/"], [:named_reference, "Unit.boe"]]]]], [:operator, "*"], [:brackets, [:named_reference, "Price2009"]]]]
   end
   
   it "returns infix modifiers in edge cases" do
@@ -149,6 +164,9 @@ describe Formula do
 INDEX(INDIRECT(BI$19&"!Year.Matrix"),MATCH("Subtotal.Consumption",INDIRECT(BI$19&"!Year.Modules"),0),MATCH("V.04",INDIRECT(BI$19&"!Year.Vectors"),0)))}
     Formula.parse(complex2).to_ast.should == [:formula, [:prefix, "-", [:brackets, [:arithmetic, [:function, "INDEX", [:function, "INDIRECT", [:string_join, [:cell, "BI$19"], [:string, "!Year.Matrix"]]], [:function, "MATCH", [:string, "Subtotal.Supply"], [:function, "INDIRECT", [:string_join, [:cell, "BI$19"], [:string, "!Year.Modules"]]], [:number, "0"]], [:function, "MATCH", [:string, "V.04"], [:function, "INDIRECT", [:string_join, [:cell, "BI$19"], [:string, "!Year.Vectors"]]], [:number, "0"]]], [:operator, "+"], [:function, "INDEX", [:function, "INDIRECT", [:string_join, [:cell, "BI$19"], [:string, "!Year.Matrix"]]], [:function, "MATCH", [:string, "Subtotal.Consumption"], [:function, "INDIRECT", [:string_join, [:cell, "BI$19"], [:string, "!Year.Modules"]]], [:number, "0"]], [:function, "MATCH", [:string, "V.04"], [:function, "INDIRECT", [:string_join, [:cell, "BI$19"], [:string, "!Year.Vectors"]]], [:number, "0"]]]]]]]
     Formula.parse("MAX(MIN(F121, -F22),0)").to_ast.should == [:formula, [:function, "MAX", [:function, "MIN", [:cell, "F121"], [:prefix, "-", [:cell, "F22"]]], [:number, "0"]]]
+    complex3 = 'IFERROR(INDEX(INDIRECT($C102&".Outputs["&this.Year&"]"), MATCH(Z$5, INDIRECT($C102&".Outputs[Vector]"), 0)), 0)'
+    Formula.parse(complex3).to_ast.should == [:formula, [:function, "IFERROR", [:function, "INDEX", [:function, "INDIRECT", [:string_join, [:cell, "$C102"], [:string, ".Outputs["], [:named_reference, "this.Year"], [:string, "]"]]], [:function, "MATCH", [:cell, "Z$5"], [:function, "INDIRECT", [:string_join, [:cell, "$C102"], [:string, ".Outputs[Vector]"]]], [:number, "0"]]], [:number, "0"]]]
+    Formula.parse('INDIRECT($C102&".Outputs["&this.Year&"]")').to_ast.should == [:formula, [:function, "INDIRECT", [:string_join, [:cell, "$C102"], [:string, ".Outputs["], [:named_reference, "this.Year"], [:string, "]"]]]]
   end
   
   it "returns formulas with spaces" do
@@ -162,4 +180,22 @@ INDEX(INDIRECT(BI$19&"!Year.Matrix"),MATCH("Subtotal.Consumption",INDIRECT(BI$19
     Formula.parse(spaced4).to_ast.should == [:formula, [:function, "SUMIFS", [:function, "INDEX", [:area, "$G$62", "$J$73"], [:null], [:function, "MATCH", [:cell, "$E$11"], [:area, "$G$61", "$J$61"], [:number, "0"]]], [:area, "$C$62", "$C$73"], [:cell, "$C195"], [:area, "$D$62", "$D$73"], [:cell, "$D195"]]]
   end
   
+  it "returns formulas that use table range references" do
+    table_with_range = "SUM(EF[[#This Row],[CO2]:[N2O]])"
+    Formula.parse(table_with_range).to_ast.should == [:formula, [:function, "SUM", [:table_reference, "EF", "[#This Row],[CO2]:[N2O]"]]]
+  end
+  
+  it "parses external references" do
+    formula_with_external = "INDEX([1]!Modules[Module], MATCH($C5, [1]!Modules[Code], 0))"
+    Formula.parse(formula_with_external).to_ast.should == [:formula, [:function, "INDEX", [:external_reference, "[1]!", [:table_reference, "Modules", "Module"]], [:function, "MATCH", [:cell, "$C5"], [:external_reference, "[1]!", [:table_reference, "Modules", "Code"]], [:number, "0"]]]]
+  end
+  
+  it "parses buggy references" do
+    Formula.parse("'Calcs'!a17").to_ast.should == [:formula,[:quoted_sheet_reference,'Calcs',[:cell,'a17']]]
+    Formula.parse("'Calcs'!aone2").to_ast.should == [:formula,[:quoted_sheet_reference,'Calcs',[:named_reference,'aone2']]]
+  end
+  
+  it "parses tricky indirect match table combos" do
+    Formula.parse(%q|INDEX(INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Matrix"), MATCH("Subtotal."&$A$2, INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Modules"), 0), MATCH([Vector], INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Vectors"), 0))|).to_ast.should == [:formula, [:function, "INDEX", [:function, "INDIRECT", [:string_join, [:string, "'"], [:table_reference, "XVI.a.Inputs", "#Headers"], [:string, "'!Year.Matrix"]]], [:function, "MATCH", [:string_join, [:string, "Subtotal."], [:cell, "$A$2"]], [:function, "INDIRECT", [:string_join, [:string, "'"], [:table_reference, "XVI.a.Inputs", "#Headers"], [:string, "'!Year.Modules"]]], [:number, "0"]], [:function, "MATCH", [:local_table_reference, "Vector"], [:function, "INDIRECT", [:string_join, [:string, "'"], [:table_reference, "XVI.a.Inputs", "#Headers"], [:string, "'!Year.Vectors"]]], [:number, "0"]]]]
+  end
 end

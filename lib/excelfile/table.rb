@@ -6,8 +6,9 @@ module RubyFromExcel
   class Table
   
     def self.reference_for(table_name,structured_reference,cell_making_the_reference = nil)
-      return ":ref" unless tables.include?(table_name)
-      tables[table_name].reference_for(structured_reference,cell_making_the_reference)
+      # puts "'#{table_name.downcase}' not found in #{tables.keys}" unless tables.include?(table_name.downcase)
+      return ":ref" unless tables.include?(table_name.downcase)
+      tables[table_name.downcase].reference_for(structured_reference,cell_making_the_reference)
     end
   
     def self.reference_for_local_reference(cell,structured_reference)
@@ -21,13 +22,13 @@ module RubyFromExcel
     end
   
     def self.add(table)
-      tables[table.name] = table
+      tables[table.name.downcase] = table
     end
 
     attr_reader :worksheet, :name, :reference, :column_name_array, :number_of_total_rows, :all, :data, :headers, :totals, :column_names  
   
     def self.from_xml(worksheet,xml)
-      Table.new(worksheet,xml['name'],xml['ref'],xml.css('tableColumn').map {|c| c['name']}.to_a,xml['totalsRowCount'])
+      Table.new(worksheet,xml['displayName'],xml['ref'],xml.css('tableColumn').map {|c| c['name']}.to_a,xml['totalsRowCount'])
     end
   
     def initialize(worksheet,name,reference,column_name_array,number_of_total_rows)
@@ -43,23 +44,28 @@ module RubyFromExcel
       @totals = @all.rows(index_of_first_total_row,-1)
       @column_names = {}
       column_name_array.each_with_index do |name,index|
-        @column_names[name.strip] = index # column['id'].to_i
+        @column_names[name.strip.downcase] = index # column['id'].to_i
       end
       Table.add(self)
+      RubyFromExcel.debug(:tables,"#{worksheet.name}.#{name} -> Table #{reference.inspect},#{column_name_array.inspect},#{number_of_total_rows}")
     end
   
     def column(name)
       name = $1 if name.to_s =~ /^(\d+)\.0+$/
-      return :na unless column = column_names[name]
+      return :na unless column = column_names[name.to_s.downcase]
       data.column(column)
     end
   
     def reference_for(structured_reference,cell_making_the_reference = nil)
       structured_reference.strip!
       return this_row(cell_making_the_reference) if structured_reference == '#This Row'
-      if structured_reference =~ /\[(.*?)\],\[(.*?)\]/
+      if structured_reference =~ /\[(.*?)\],\[(.*?)\]:\[(.*?)\]/
+        return this_row_area_intersection(cell_making_the_reference,area_for_simple_reference($2),area_for_simple_reference($3)) if $1 == '#This Row'
+        # return all.column(column_names[$2]) if $1 == '#All'
+        # return intersection(area_for_simple_reference($1),area_for_simple_reference($2))
+      elsif structured_reference =~ /\[(.*?)\],\[(.*?)\]/
         return this_row_intersection(cell_making_the_reference,area_for_simple_reference($2)) if $1 == '#This Row'
-        return all.column(column_names[$2]) if $1 == '#All'
+        return all.column(column_names[$2.to_s.downcase]) if $1 == '#All'
         return intersection(area_for_simple_reference($1),area_for_simple_reference($2))
       end
       if cell_making_the_reference
@@ -95,6 +101,13 @@ module RubyFromExcel
   
     def this_row_intersection(cell_making_the_reference,column_area)
       "#{worksheet}.#{Reference.ruby_for(column_area.start_cell.column_number,cell_making_the_reference.row_number)}"
+    end
+    
+    def this_row_area_intersection(cell_making_the_reference,first_column_area,last_column_area)
+      row = cell_making_the_reference.row_number
+      first_column = Reference.ruby_for(first_column_area.start_cell.column_number,row)
+      last_column = Reference.ruby_for(last_column_area.start_cell.column_number,row)
+      "#{worksheet}.a('#{first_column}','#{last_column}')"
     end
   
     def this_column_intersection(cell_making_the_reference,row_area)

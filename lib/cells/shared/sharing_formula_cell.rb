@@ -24,8 +24,10 @@ module RubyFromExcel
     def share_formula_with_cell(cell)
       return unless cell
       return unless cell.is_a?(SharedFormulaCell)
+      cell.original_formula = self.original_formula
       cell.shared_formula = self.ast
       cell.shared_formula_offset = offset_from(cell)
+      cell.debug_after_sharing
     end
   
     def offset_from(cell)

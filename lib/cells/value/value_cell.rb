@@ -6,6 +6,8 @@ module RubyFromExcel
       vc.reference = other_cell.reference
       vc.xml_value = other_cell.xml_value
       vc.xml_type = other_cell.xml_type
+      vc.work_out_dependencies
+      vc.debug
       vc
     end
   
@@ -19,6 +21,12 @@ module RubyFromExcel
   
     def to_test( r = RubySpecWriter.new)
       nil # i.e., don't bother with tests for simple_values
-    end  
+    end
+    
+    def debug
+      return "" unless xml_value
+      RubyFromExcel.debug(:cells,"#{worksheet.name}.#{reference} -> #{xml_value.inspect} (#{xml_type}) -> #{value_for_including.inspect}")
+    end
+    
   end
 end

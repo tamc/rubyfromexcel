@@ -14,7 +14,7 @@ describe SimpleFormulaCell, "when result is a number" do
   end
   
   it "should create a test for the ruby code" do
-    @cell.to_test.should == %Q{it 'cell c3 should equal 3.0' do\n  sheet1.c3.should be_close(3.0,0.3)\nend\n\n}
+    @cell.to_test.should == %Q{it 'cell c3 should equal 3.0' do\n  sheet1.c3.should be_within(0.30000000000000004).of(3.0)\nend\n\n}
   end
   
   it "has a method that says it cannot be replaced with its value" do

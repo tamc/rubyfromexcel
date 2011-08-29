@@ -13,7 +13,7 @@ describe SharedFormulaCell do
   
   it "it is given a pre-parsed formula and offsets its references by the amount of its shared_formula_offset" do
     @cell.to_ruby.should == "def w8; @w8 ||= a1+c3; end\n"
-    @cell.to_test.should == "it 'cell w8 should equal 1.0' do\n  sheet1.w8.should be_close(1.0,0.1)\nend\n\n"
+    @cell.to_test.should == "it 'cell w8 should equal 1.0' do\n  sheet1.w8.should be_within(0.1).of(1.0)\nend\n\n"
   end
   
   it "knows what it depends on" do

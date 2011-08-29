@@ -27,6 +27,40 @@ describe "set" do
   end
 end
 
+describe "round" do
+  it "should round numbers correctly" do
+    FunctionTest.round(1.1,0).should == 1.0
+    FunctionTest.round(1.5,0).should == 2.0
+    FunctionTest.round(1.56,1).should == 1.6
+  end
+end
+
+describe "roundup" do
+  it "should round numbers up correctly" do
+    FunctionTest.roundup(1.0,0).should == 1.0
+    FunctionTest.roundup(1.1,0).should == 2.0
+    FunctionTest.roundup(1.5,0).should == 2.0
+    FunctionTest.roundup(1.53,1).should == 1.6
+  end
+end
+
+describe "rounddown" do
+  it "should round numbers up correctly" do
+    FunctionTest.rounddown(1.0,0).should == 1.0
+    FunctionTest.rounddown(1.1,0).should == 1.0
+    FunctionTest.rounddown(1.5,0).should == 1.0
+    FunctionTest.rounddown(1.53,1).should == 1.5
+  end
+end
+
+describe "mod" do
+  it "should return the remainder of a number" do
+    FunctionTest.mod(10,3).should == 1.0
+    FunctionTest.mod(10,5).should == 0.0
+    FunctionTest.mod(1.1,1).should be_close(0.1,0.01)
+  end
+end
+
 describe "sum" do
   it "should total areas correctly" do
     FunctionTest.sum(1,2,3).should == 6
@@ -54,6 +88,27 @@ describe "sumif" do
     FunctionTest.sumif(FunctionTest.a('a1','a3'),10.0).should == 10.0
     FunctionTest.sumif(FunctionTest.a('b1','b3'),'Bear',FunctionTest.a('a1','a2')).should == 100.0
   end
+  
+  it "should understand >0 type criteria" do
+    FunctionTest.sumif(FunctionTest.a('a1','a3'),">0").should == 110.0
+    FunctionTest.sumif(FunctionTest.a('a1','a3'),">10").should == 100.0
+    FunctionTest.sumif(FunctionTest.a('a1','a3'),"<100").should == 10.0
+  end
+  
+end
+
+describe "countif" do
+  it "should only count values in the area that meet the criteria" do
+    FunctionTest.countif(FunctionTest.a('a1','a3'),10.0).should == 1.0
+    FunctionTest.sumif(FunctionTest.a('b1','b3'),'Bear',FunctionTest.a('a1','a2')).should == 100.0
+  end
+  
+  it "should understand >0 type criteria" do
+    FunctionTest.countif(FunctionTest.a('a1','a3'),">0").should == 2.0
+    FunctionTest.countif(FunctionTest.a('a1','a3'),">10").should == 1.0
+    FunctionTest.countif(FunctionTest.a('a1','a3'),"<100").should == 1.0
+  end
+  
 end
 
 describe "sumifs" do
@@ -71,6 +126,11 @@ describe "sumproduct" do
   it "should multiply together and then sum the elements in row or column areas given as arguments" do
     FunctionTest.sumproduct(FunctionTest.a('a1','a3'),FunctionTest.a('zx10','zz10')).should == 320.0
   end
+
+  it "should return :value when miss-matched array sizes" do
+    FunctionTest.sumproduct(FunctionTest.a('a1','a4'),FunctionTest.a('zx10','zz10')).should == :value
+  end
+  
 end
 
 describe "count" do
@@ -116,7 +176,8 @@ describe "match" do
     FunctionTest.match(1.0,FunctionTest.a('a1','a2'),1.0).should == :na
     FunctionTest.match('Care',FunctionTest.a('b1','b3'),-1.0).should == 1  
     FunctionTest.match('Zebra',FunctionTest.a('b1','b3'),-1.0).should == :na
-    FunctionTest.match('a',FunctionTest.a('b1','b3'),-1.0).should == 2    
+    FunctionTest.match('a',FunctionTest.a('b1','b3'),-1.0).should == 2
+    # FunctionTest.match("v.02",["p.01","V.01","v.05"],"false").should == 2
   end
 end
 
@@ -139,6 +200,10 @@ describe "max" do
   it "should return the argument with the greatest value" do
     FunctionTest.max(1,"two",FunctionTest.a('a1','a3')).should == 100    
   end
+  it "should return an error if any of its inputs are errors" do
+    FunctionTest.max(1,"two",FunctionTest.a('a1','a3'),:ref).should == :ref
+  end
+  
 end
 
 describe "min" do
@@ -159,6 +224,11 @@ describe "iserr" do
     FunctionTest.iserr(:ref).should == true
   end
   
+  it "should return true if passed nan or infinity" do
+    FunctionTest.iserr(0.0/0.0).should == true
+    FunctionTest.iserr(10.0/0.0).should == true
+  end
+  
   it "should return false if passed anything else" do
     FunctionTest.iserr(123).should == false
   end
@@ -172,12 +242,18 @@ describe "excel_if" do
   it "should return its third argument if its first argument is false" do
     FunctionTest.excel_if(false,:second,:third).should == :third
   end
+  
+  it "should have a default value of false for its second argument" do
+    FunctionTest.excel_if(true,:second).should == :second
+    FunctionTest.excel_if(false,:second).should == false
+  end
 end
 
 describe "iferror" do
   it "should return its second value if there is an error in the first" do
     FunctionTest.iferror(FunctionTest.index(FunctionTest.a('a1','b3'),3.0,1.0),"Not found").should == 0.0
     FunctionTest.iferror(FunctionTest.index(FunctionTest.a('a1','b3'),3.0,3.0),"Not found").should == "Not found"
+    FunctionTest.iferror(0.0/0.0,"Zero division").should == "Zero division"
   end
 end
 
@@ -224,6 +300,43 @@ describe "find" do
   end
 end
 
+describe "pmt" do
+  it "should calculate the monthly payment required for a given principal, interest rate and loan period" do
+    FunctionTest.pmt(0.1,10,100).should be_within(0.01).of(-16.27)
+    FunctionTest.pmt(0.0123,99.1,123.32).should be_within(0.01).of(-2.159)
+  end
+end
+
+describe "npv" do
+  it "should calculate the discounted value of future cash flows" do
+    FunctionTest.npv(0.1,-10000,3000,4200,6800).should be_within(0.01).of(1188.44)
+    FunctionTest.npv(0.08,8000,9200,10000,12000,14500).should be_within(0.01).of(1922.06+40000)
+    FunctionTest.npv(0.08,8000,9200,10000,12000,14500,-9000).should be_within(0.01).of(-3749.47+40000)
+    FunctionTest.npv(0.1,FunctionTest.a('a1','a2'),20).should  be_within(0.01).of(106.76)
+  end
+end
+
+describe "excel comparisons" do
+  
+  it "should carry out comparisons in the usual way" do
+    FunctionTest.excel_comparison(10,"==",5).should == false
+    FunctionTest.excel_comparison(10,"<=",5).should == false
+    FunctionTest.excel_comparison(10,">=",5).should == true
+    FunctionTest.excel_comparison(10,"<",5).should == false
+    FunctionTest.excel_comparison(10,">",5).should == true
+    FunctionTest.excel_comparison(10,"==",10).should == true
+    FunctionTest.excel_comparison(10,"!=",10).should == false
+    FunctionTest.excel_comparison(10,"<=",10).should == true
+    FunctionTest.excel_comparison(10,">=",10).should == true
+    FunctionTest.excel_comparison(10,"<",10).should == false
+    FunctionTest.excel_comparison(10,">",10).should == false 
+  end
+
+  it "should test for equality, ignoring string case" do        
+    FunctionTest.excel_comparison("A","==","a").should == true
+  end
+end
+
 describe "ability to respond to empty cell references" do
   it "should return 0 if a reference is made to an empty cell" do
     FunctionTest.a23.should == 0.0
@@ -257,6 +370,9 @@ class FunctionTest2
   def sheet1
     self
   end
+  
+  def name; "sheet1"; end
+    
   def a1; "Cell A1"; end
   def a2; "Middle A2"; end
   def a3; "Total A3"; end

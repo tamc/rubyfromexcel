@@ -4,7 +4,7 @@ describe SingleCellArrayFormulaCell do
   
   before do
     @cell = SingleCellArrayFormulaCell.new(
-      mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1'),
+      mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1',:name => 'sheet1'),
       Nokogiri::XML("<c r=\"C3\"><f t=\"array\" ref=\"C3\">SUM(F$437:F$449/$M$150:$M$162*($B454=$F$149:$N$149)*($F$150:$N$162))</f><v>3</v></c>").root
     )
   end
@@ -14,12 +14,26 @@ describe SingleCellArrayFormulaCell do
   end
   
   it "should create a test for the ruby code" do
-    @cell.to_test.should == %Q{it 'cell c3 should equal 3.0' do\n  sheet1.c3.should be_close(3.0,0.3)\nend\n\n}
+    @cell.to_test.should == %Q{it 'cell c3 should equal 3.0' do\n  sheet1.c3.should be_within(0.30000000000000004).of(3.0)\nend\n\n}
   end
   
   it "in can list the cells upon which it depends" do
     @cell.work_out_dependencies
     dependencies = @cell.dependencies
     dependencies.include?('sheet1.g151').should be_true
+  end
+end
+
+describe SingleCellArrayFormulaCell, " where an array is returned by the formula" do
+  
+  before do
+    @cell = SingleCellArrayFormulaCell.new(
+      mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1',:name => 'sheet1'),
+      Nokogiri::XML("<c r=\"C3\"><f t=\"array\" ref=\"C3\">5*$F$150:$N$162</f><v>3</v></c>").root
+    )
+  end
+  
+  it "should use the top left response of the array formula" do
+    @cell.to_ruby.should == "def c3; @c3 ||= (m(5.0,a('f150','n162')) { |r1,r2| r1*r2 }).array_formula_offset(0,0); end\n"
   end
 end

@@ -78,7 +78,7 @@ describe Table do
   it "should be able to translate structured references that include the special variable #This Row" do
     table.reference_for('[#This Row],[ColA]', Reference.new('e5')).to_s.should == 'sheet1.b5'
     table.reference_for('#This Row',Reference.new('e5')).start_cell.to_s.should == 'b5'
-    table.reference_for('#This Row',Reference.new('e5')).end_cell.to_s.should == 'd5'    
+    table.reference_for('#This Row',Reference.new('e5')).end_cell.to_s.should == 'd5'
   end
   
   it "should be able to translate structured references from cells that are in the table, treating them as if they had indicated [#This row] as part of the reference" do
@@ -91,6 +91,11 @@ describe Table do
     Table.reference_for('FirstTable','#Data').start_cell.to_s.should == 'b4'
     Table.reference_for('Not a known table','#Data').should == ":ref"
     Table.reference_for('FirstTable','[#This Row],[ColA]', Reference.new('e5')).to_s.should == 'sheet1.b5'
+  end
+  
+  it "should be able to deal with a column range, returning a range" do
+    table
+    Table.reference_for('FirstTable','[#This Row],[ColA]:[ColC]', Reference.new('e5')).to_s.should == "sheet1.a('b5','d5')"
   end
   
   it "#inspect should create a string that can be used to recreate the table" do

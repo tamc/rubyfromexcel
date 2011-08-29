@@ -31,11 +31,10 @@ module RubyFromExcel
     def load_worksheets_from(xml)
       xml.css("sheet").each do |s|
         worksheet_filename = relationships[s['id']]
-        worksheet = Worksheet.from_file(worksheet_filename)
-        worksheet.name = File.basename(worksheet_filename,'.xml')
-        worksheet.workbook = self
+        worksheet = Worksheet.from_file(worksheet_filename,self)
         worksheets[worksheet.name] = worksheet
         SheetNames.instance[s['name']] = worksheet.name
+        RubyFromExcel.debug(:worksheet_names,"#{worksheet.name}: #{s['name'].inspect}")
         worksheet_array << worksheet
         puts "Loaded #{worksheet.name} with #{worksheet.cells.size} cells"
       end
@@ -44,12 +43,18 @@ module RubyFromExcel
     def work_out_named_references_from(xml)
       xml.css('definedName').each do |defined_name_xml|
         reference_name = defined_name_xml['name'].gsub(/([a-z])([A-Z])/,'\1_\2').downcase.gsub(/[^a-z0-9_]/,'_')
-        reference = Formula.parse(defined_name_xml.content).visit(FormulaBuilder.new)
+        reference_value = defined_name_xml.content
+        if reference_value.start_with?('[')
+          puts "Sorry, #{reference_name} (#{reference_value}) has a link to an external workbook. Skipping."
+          next
+        end
+        reference = Formula.parse(reference_value).visit(FormulaBuilder.new)
         if defined_name_xml["localSheetId"]
           worksheet_array[defined_name_xml["localSheetId"].to_i].named_references[reference_name] = reference
         else
           named_references[reference_name] = reference
         end
+        RubyFromExcel.debug(:named_references,"#{defined_name_xml['name'].inspect} (#{defined_name_xml["localSheetId"]}) -> #{reference_name.inspect} (#{defined_name_xml["localSheetId"] ? worksheet_array[defined_name_xml["localSheetId"].to_i].name.inspect : ""}) -> #{reference_value.inspect}")
       end
     end
   

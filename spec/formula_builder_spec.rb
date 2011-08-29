@@ -28,18 +28,19 @@ describe FormulaBuilder do
   
   it "Should convert percentages appropriately to their float equivalents" do
     ruby_for("1+3%").should == "1.0+0.03"
-    ruby_for("1+103.12%").should == "1.0+1.0312"
+    ruby_for("1+103.12%").should == "1.0+1.0312000000000001" # Uh oh
   end
   
   it "Should convert powers to their ruby equivalent" do
     ruby_for("1^12").should == "1.0**12.0"
   end
   
-  it "Should join strings together, adding to_s where appropriate" do
+  it "Should join strings together, adding to_s " do
     ruby_for('"Hello"&"world"').should == '"Hello"+"world"'
-    ruby_for('"Hello "&A1').should == '"Hello "+a1.to_s'
-    ruby_for('AA1&"GW"').should == 'aa1.to_s+"GW"'
-    ruby_for('"GW"&ISERR($AA$1)').should == '"GW"+iserr(aa1).to_s'
+    ruby_for('"Hello "&A1').should == '"Hello "+(a1).to_s'
+    ruby_for('AA1&"GW"').should == '(aa1).to_s+"GW"'
+    ruby_for('"GW"&ISERR($AA$1)').should == '"GW"+(iserr(aa1)).to_s'
+    ruby_for('"GW"&23/15').should == '"GW"+(23.0/15.0).to_s'
   end
   
   it "Should convert area references to a(start,end) functions" do
@@ -55,16 +56,26 @@ describe FormulaBuilder do
   end
   
   it "should leave strings as they are, even if they look like formulas" do
-    ruby_for('"A1+3*2"&$A3').should == '"A1+3*2"+a3.to_s'
+    ruby_for('"A1+3*2"&$A3').should == '"A1+3*2"+(a3).to_s'
   end
   
   it "should properly escape strings where necessary" do
     ruby_for(%q{"String with 'quotes' in it"}).should == '"String with \'quotes\' in it"'
   end
+
+  it "should convert double sets of quotes (\"\") into single sets (\")" do
+    ruby_for('"A ""quote"""').should == '"A \"quote\""'
+  end
+
   
   it "should convert sheet names to ruby methods" do
     ruby_for("asheetname!A3:B20").should == "sheet1.a('a3','b20')"
     ruby_for("'a long sheet name with spaces'!A3:B20").should == "sheet2.a('a3','b20')"
+    
+  end
+  
+  it "should ignore external references in sheet names (because they are not implemented yet)" do
+    ruby_for("'[1]a long sheet name with spaces'!A3:B20").should == "sheet2.a('a3','b20')"
   end
   
   it "should convert named references to ruby methods and inline their values" do
@@ -87,14 +98,41 @@ describe FormulaBuilder do
     ruby_for("-($AG70+$X70)*EF.NaturalGas.N2O").should == "-(ag70+x70)*sheet10.a1"
   end
   
+  it "Edge case: it should convert formulae that refer to an error on a particular sheet made in a named reference definition" do
+    @builder.formula_cell = nil
+    ruby_for("Control!#REF!").should == ":name"
+  end
+  
   it "should convert table names to references" do
-    Table.new(mock(:worksheet,:to_s => 'sheet1'),'Vectors','a1:c41',['ColA','Description','ColC'],1)
+    Table.new(mock(:worksheet,:name => 'sheet1',:to_s => 'sheet1'),'Vectors','a1:c41',['ColA','Description','ColC'],1)
     ruby_for("Vectors[Description]").should == "sheet1.a('b2','b40')"
     ruby_for("Vectors[#all]").should == "sheet1.a('a1','c41')"
     ruby_for("Vectors[#totals]").should == "sheet1.a('a41','c41')"
     ruby_for("Vectors[[#totals],[Description]]").should == "sheet1.b41"
     @builder.formula_cell = mock(:cell,:reference => Reference.new('f30'))
     ruby_for("Vectors[[#This Row],[Description]]").should == "sheet1.b30"
+    ruby_for("Vectors[[#This Row],[Description]:[ColC]]").should == "sheet1.a('b30','c30')"
+  end
+  
+  it "should convert table names inside indirects" do
+    workbook = mock(:workbook, :named_references => {'named_cell' => 'sheet2.z10', 'named_cell2' => "sheet2.a('z10','ab10')"})
+    worksheet1 = mock(:worksheet,:name => "sheet1", :to_s => 'sheet1', :workbook => workbook, :named_references => {'named_cell' => 'sheet1.a1','this_year' => 'sheet1.a1'})
+    worksheet2 = mock(:worksheet,:name => "sheet2", :to_s => 'sheet2', :workbook => workbook, :named_references => {})
+    workbook.stub!(:worksheets => {'sheet1' => worksheet1, 'sheet2' => worksheet2 })
+    worksheet1.should_receive(:cell).with('c102').twice.and_return(mock(:cell,:value_for_including => 'XVI.a',:can_be_replaced_with_value? => true))
+    worksheet1.should_receive(:cell).with('a1').and_return(mock(:cell,:value_for_including => '2050',:can_be_replaced_with_value? => true))
+    cell = mock(:cell,:worksheet => worksheet1, :reference => Reference.new('c30',worksheet1))    
+    @builder.formula_cell = cell
+    Table.new(worksheet1,'XVI.a.Outputs','a1:c41',['2050','Description','Vector'],1)
+    
+    ruby_for('INDIRECT($C102&".Outputs["&this.Year&"]")').should == "sheet1.a30"
+    ruby_for('INDIRECT($C102&".Outputs[Vector]")').should == "sheet1.c30"
+  end
+  
+  it "should ignore external references, assuming that they point to an internal equivalent" do
+    formula_with_external = "INDEX([1]!Modules[Module], MATCH($C5, [1]!Modules[Code], 0))"
+    Table.new(mock(:worksheet,:to_s => 'sheet1',:name => "sheet1",),'Modules','a1:c41',['Module','Code','ColC'],1)
+    ruby_for(formula_with_external).should == "index(sheet1.a('a2','a40'),match(c5,sheet1.a('b2','b40'),0.0))"
   end
   
   it "should convert unkown table names to :ref" do
@@ -102,7 +140,7 @@ describe FormulaBuilder do
   end
   
   it "should convert unqualified table names to references" do
-    sheet = mock(:worksheet,:to_s => 'sheet1')
+    sheet = mock(:worksheet,:name => "sheet1",:to_s => 'sheet1')
     Table.new(sheet,'Vectors','a1:c41',['ColA','Description','ColC'],1)
     @builder.formula_cell = mock(:cell,:reference => Reference.new('c30',sheet), :worksheet => sheet)
     ruby_for("[Description]").should == "sheet1.b30"
@@ -139,11 +177,11 @@ describe FormulaBuilder do
     worksheet.should_receive(:cell).with('a1').and_return(cell)
     workbook.should_receive(:indirects_used=).with(true)
     @builder.formula_cell = mock(:cell,:reference => Reference.new('f30'),:worksheet => worksheet)
-    ruby_for('INDIRECT("ONE"&A1)').should == 'indirect("ONE"+a1.to_s,\'f30\')'
+    ruby_for('INDIRECT("ONE"&A1)').should == 'indirect("ONE"+(a1).to_s,\'f30\')'
   end
   
   it "should attempt to interpret indirect functions where that is appropriate" do
-    worksheet = mock(:worksheet, :to_s => 'sheet1')
+    worksheet = mock(:worksheet, :to_s => 'sheet1',:name => "sheet1")
     @builder.formula_cell = mock(:cell,:reference => Reference.new('f30',worksheet),:worksheet => worksheet)
     ruby_for('INDIRECT("A1")').should == "a1"
     ruby_for('INDIRECT("A"&"1")').should == "a1"
@@ -184,8 +222,8 @@ describe FormulaBuilder do
   end
   
   
-  it "should convert comparators into single expressions so that they work in ifs" do
-    ruby_for('IF(A1=3,"A","B")').should == 'excel_if(a1==3.0,"A","B")'
+  it "should convert comparators into a function, so that can cope with excels version of equality" do
+    ruby_for('IF(A1=3,"A","B")').should == 'excel_if(excel_comparison(a1,"==",3.0),"A","B")'
   end
 
   it "should convert complex formulas" do
@@ -203,12 +241,13 @@ describe FormulaBuilder do
     a1 = mock(:cell,:reference => Reference.new('a1',worksheet),:worksheet => worksheet,:value_for_including => 'A', :can_be_replaced_with_value? => true)
     a2 = mock(:cell,:reference => Reference.new('a2',worksheet),:worksheet => worksheet,:value_for_including => 'A', :can_be_replaced_with_value? => true)
     a3 = mock(:cell,:reference => Reference.new('a3',worksheet),:worksheet => worksheet,:value_for_including => 'B', :can_be_replaced_with_value? => true)
-    worksheet.should_receive(:cell).with('a1').and_return(a1)
-    worksheet.should_receive(:cell).with('a2').and_return(a2)
-    worksheet.should_receive(:cell).with('a3').and_return(a3)
+    worksheet.should_receive(:cell).with('a1').exactly(3).times.and_return(a1)
+    worksheet.should_receive(:cell).with('a2').exactly(2).times.and_return(a2)
+    worksheet.should_receive(:cell).with('a3').exactly(2).times.and_return(a3)
     @builder.formula_cell = mock(:cell,:reference => Reference.new('f30',worksheet),:worksheet => worksheet)
     ruby_for('MATCH("A",A1:A3)').should == "2.0"
     ruby_for('MATCH("X",A1:A3,FALSE)').should == "na"
+    ruby_for('MATCH("A",A1:A3,FALSE)').should == "1.0"
   end
   
   it "should replace INDEX() with a cell reference where it depends only on cells that can be replaced with their values" do
@@ -219,7 +258,7 @@ describe FormulaBuilder do
   end
   
   it "should put multiple items as single arguments in a function" do
-    ruby_for("IF(A23>=(1.0+B38),1.0,2.0)").should == "excel_if(a23>=(1.0+b38),1.0,2.0)"
+    ruby_for("IF(A23>=(1.0+B38),1.0,2.0)").should == "excel_if(excel_comparison(a23,\">=\",(1.0+b38)),1.0,2.0)"
     ruby_for("MAX(F60+(G$59-F$59)*G38,0)").should == "max(f60+(g59-f59)*g38,0.0)"
   end
 

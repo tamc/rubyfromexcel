@@ -30,11 +30,11 @@ module RubyFromExcel
     end
   
     def dependencies_for(full_reference)
-      return [] unless full_reference  =~ /(sheet\d+)\.(.*)/
+      return [] unless full_reference  =~ /^(sheet\d+)\.(.*)$/
       sheet_name, reference = $1, $2
       using_worksheet(sheet_name) do
         case reference
-        when /a\('(.*?)','(.*?)'\)/; area($1,$2)
+        when /^a\('(.*?)','(.*?)'\)$/; area($1,$2)
         else; self.dependencies << full_reference
         end
       end    

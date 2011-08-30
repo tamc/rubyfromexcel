@@ -61,6 +61,12 @@ describe DependencyBuilder do
       Table.new(@worksheet2,'IndirectVectors','a1:b2',['ColA','Description'],1)
       dependencies_for('INDIRECT("IndirectVectors[#all]")').should == ["sheet2.a1","sheet2.a2",'sheet2.b1','sheet2.b2']
    end
+   
+   it "should deal with indirect formulae that don't point to anywhere useful, returning a #REF!" do
+     dependencies_for('INDIRECT("IndirectVectors[#all]")').should == []
+     @workbook.should_receive(:indirects_used=).with(true)
+     dependencies_for("INDIRECT('Other Sheet'!A1)").should == ['sheet2.a1']
+   end
   
    it "and be able to deal with indirect formulae that call upon other vectors" do
       Table.new(@worksheet2,'IndirectVectors2','a1:b10',['ColA','Description'],1)

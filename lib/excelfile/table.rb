@@ -47,7 +47,9 @@ module RubyFromExcel
         @column_names[name.strip.downcase] = index # column['id'].to_i
       end
       Table.add(self)
-      RubyFromExcel.debug(:tables,"#{worksheet.name}.#{name} -> Table #{reference.inspect},#{column_name_array.inspect},#{number_of_total_rows}")
+      if $DEBUG
+        RubyFromExcel.debug(:tables,"#{worksheet.name}.#{name} -> Table #{reference.inspect},#{column_name_array.inspect},#{number_of_total_rows}")
+      end
     end
   
     def column(name)

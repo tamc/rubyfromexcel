@@ -316,6 +316,14 @@ describe "npv" do
   end
 end
 
+describe "text" do
+  it "should round a numeric value to a number of decimal places and then return a string if in the format text(3.1415,0), otherwise not implemented" do
+    FunctionTest.text(3.1415,0).should == "3"
+    FunctionTest.text(3.1415,1).should == "3.1"
+  end
+end
+
+
 describe "excel comparisons" do
   
   it "should carry out comparisons in the usual way" do

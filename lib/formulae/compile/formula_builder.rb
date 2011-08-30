@@ -177,6 +177,7 @@ module RubyFromExcel
     excel_function :pmt
     excel_function :npv
     excel_function :countif
+    excel_function :text
   
     def standard_function(name_to_use_in_ruby,args)
       "#{name_to_use_in_ruby}(#{args.map {|a| a.visit(self) }.join(',')})"

@@ -104,6 +104,13 @@ module RubyFromExcel
       worksheet
     end
     
+    def text(number,format)
+      return number if iserr(number)
+      return format if iserr(format)
+      raise Exception.new("format #{format} not implemented") unless format.is_a?(Numeric)
+      number.round(format).to_s
+    end
+    
     def round(number,decimal_places)
       return number if iserr(number)
       return decimal_places if iserr(decimal_places)

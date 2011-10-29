@@ -137,6 +137,7 @@ describe Formula do
     Formula.parse("INDEX(Global.Assumptions[Households], MATCH(F$321,Global.Assumptions[Year], 0))").to_ast.should == [:formula, [:function, "INDEX", [:table_reference, "Global.Assumptions", "Households"], [:function, "MATCH", [:cell, "F$321"], [:table_reference, "Global.Assumptions", "Year"], [:number, "0"]]]]
     Formula.parse("MAX(-SUM(I.a.Inputs[2007])-F$80,0)").to_ast.should == [:formula, [:function, "MAX", [:arithmetic, [:prefix, "-", [:function, "SUM", [:table_reference, "I.a.Inputs", "2007"]]], [:operator, "-"], [:cell, "F$80"]], [:number, "0"]]]
     Formula.parse('DeptSales_101[Sale Amount]').to_ast.should  == [:formula,[:table_reference,'DeptSales_101','Sale Amount']]
+    Formula.parse('EF.I.a.PM10[2010]').to_ast.should == [:formula,[:table_reference,'EF.I.a.PM10','2010']]
   end
   
   it "returns booleans" do

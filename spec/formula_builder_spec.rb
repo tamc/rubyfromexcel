@@ -129,6 +129,19 @@ describe FormulaBuilder do
     ruby_for('INDIRECT($C102&".Outputs[Vector]")').should == "sheet1.c30"
   end
   
+  it "should convert a buggy case of table inside indirect" do
+    workbook = mock(:workbook)
+    worksheet = mock(:worksheet,:name => "sheet13", :to_s => 'sheet13', :workbook => workbook)
+    workbook.stub!(:worksheets => {'sheet13' => worksheet})
+    worksheet.should_receive(:cell).with('d386').and_return(mock(:cell,:value_for_including => 'PM10',:can_be_replaced_with_value? => true))
+    worksheet.should_receive(:cell).with('g385').and_return(mock(:cell,:value_for_including => '2010',:can_be_replaced_with_value? => true))
+    cell = mock(:cell,:worksheet => worksheet, :reference => Reference.new('f386',worksheet))
+    @builder.formula_cell = cell
+    Table.new(worksheet,"EF.I.a.PM10","C90:O94",["Code", "Module", "Vector", "2007", "2010", "2015", "2020", "2025", "2030", "2035", "2040", "2045", "2050"],0)
+    
+    ruby_for('SUMPRODUCT(G$378:G$381,INDIRECT("EF.I.a."&$D386&"["&G$385&"]"))').should == "sumproduct(a('g378','g381'),sheet13.a('g91','g94'))"
+  end
+  
   it "should ignore external references, assuming that they point to an internal equivalent" do
     formula_with_external = "INDEX([1]!Modules[Module], MATCH($C5, [1]!Modules[Code], 0))"
     Table.new(mock(:worksheet,:to_s => 'sheet1',:name => "sheet1",),'Modules','a1:c41',['Module','Code','ColC'],1)

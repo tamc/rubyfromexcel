@@ -4,7 +4,7 @@ describe SimpleFormulaCell, "when result is a number" do
   
   before do
     @cell = SimpleFormulaCell.new(
-      mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1'),
+      mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1', :to_s => 'sheet1'),
       Nokogiri::XML("<c r=\"C3\"><f>1+2</f><v>3</v></c>").root
     )
   end
@@ -27,7 +27,7 @@ describe SimpleFormulaCell, "when result is a boolean" do
   
   before do
     @cell = SimpleFormulaCell.new(
-      mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1'),
+      mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1', :to_s => 'sheet1'),
       Nokogiri::XML('<c r="C3" t="b"><f>AND(1,2)</f><v>TRUE</v></c>').root
     )
   end
@@ -46,13 +46,13 @@ describe SimpleFormulaCell, "when result is a string" do
   
   before do
     @cell = SimpleFormulaCell.new(
-      mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1'),
+      mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1', :to_s => 'sheet1'),
       Nokogiri::XML('<c r="C3" t="str"><f>"Hello "&amp;A1</f><v>Hello Bob</v></c>').root
     )
   end
   
   it "should use the FormulaPeg to create ruby code for a formula and turn that into a method" do
-    @cell.to_ruby.should == %Q{def c3; @c3 ||= "Hello "+a1.to_s; end\n}
+    @cell.to_ruby.should == %Q{def c3; @c3 ||= "Hello "+(a1).to_s; end\n}
   end
   
   it "should create a test for the ruby code" do
@@ -65,7 +65,7 @@ describe SimpleFormulaCell, "can list the cells upon which it depends" do
   
   before do
     @cell = SimpleFormulaCell.new(
-        mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1'),
+        mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1', :to_s => 'sheet1'),
         Nokogiri::XML("<c r=\"C3\" t=\"str\"><f>A1</f><v>Hello Bob</v></c>").root
       )
   end

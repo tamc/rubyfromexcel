@@ -4,7 +4,7 @@ describe SharedFormulaCell do
   
   before do
     @cell = SharedFormulaCell.new(
-      mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1'),
+      mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1', :to_s => 'sheet1'),
       Nokogiri::XML('<c r="W8" s="49"><f t="shared" si="2"/><v>1</v></c>').root
     )
     @cell.shared_formula = Formula.parse("$A$1+B2")

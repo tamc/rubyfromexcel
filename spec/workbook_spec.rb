@@ -75,7 +75,7 @@ simple_worksheet_ruby =<<END
 # coding: utf-8
 # First sheet
 class Sheet1 < Spreadsheet
-  def a1; @a1 ||= excel_if(a2=="Hello","hello",sheet2.b4); end
+  def a1; @a1 ||= excel_if(excel_comparison(a2,"==","Hello"),"hello",sheet2.b4); end
   def a2; "Hello"; end
 end
 
@@ -270,14 +270,17 @@ it "should work normally when no output sheets are identified" do
 end
 
 it "should prune any cells that aren't needed for the output sheet calculations when output sheets have been specified" do
+  @workbook.work_out_dependencies
   @workbook.prune_cells_not_needed_for_output_sheets('Outputs')
   @workbook.worksheets['sheet2'].to_ruby.should == pruning_calc_sheet_ruby_output_prune
 end
 
 it "should convert cells to values where they don't depend on inputs, and then prune" do
-  @workbook.prune_cells_not_needed_for_output_sheets('Outputs')
+  @workbook.work_out_dependencies
   @workbook.convert_cells_to_values_when_independent_of_input_sheets('Inputs')
+  @workbook.prune_cells_not_needed_for_output_sheets('Outputs')
   @workbook.worksheets['sheet2'].to_ruby.should == pruning_calc_sheet_ruby_input_and_output_prune
+  $DEBUG = false
 end
 
 end

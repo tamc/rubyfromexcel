@@ -5,7 +5,7 @@ describe ArrayingFormulaCell do
 #  <c r="B3"><f t="array" ref="B3:E6">B2:E2+A3:A6</f><v>2</v></c>
 
   before do
-    @worksheet = mock(:worksheet,:class_name => 'Sheet1', :to_s => 'sheet1')
+    @worksheet = mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1', :to_s => 'sheet1')
 
     @arraying_cell = ArrayingFormulaCell.new(
       @worksheet,

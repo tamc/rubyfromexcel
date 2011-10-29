@@ -2,7 +2,7 @@ require_relative 'spec_helper'
 
 describe SharingFormulaCell do
   it "it is given a pre-parsed formula and offsets its references by the amount of its shared_formula_offset" do
-    worksheet = mock(:worksheet,:class_name => 'Sheet1',:to_s => 'sheet1')
+    worksheet = mock(:worksheet,:name => 'sheet1',:class_name => 'Sheet1',:to_s => 'sheet1')
     sharing_cell = SharingFormulaCell.new(
       worksheet,
       Nokogiri::XML('<c r="W7" s="49"><f t="shared" ref="W7:W8" si="2">A1+B2</f><v>1</v></c>').root
@@ -19,7 +19,7 @@ describe SharingFormulaCell do
   end
   
   it "knows what it depends upon" do
-    worksheet = mock(:worksheet,:class_name => 'Sheet1',:to_s => 'sheet1')
+    worksheet = mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1',:to_s => 'sheet1')
     sharing_cell = SharingFormulaCell.new(
       worksheet,
       Nokogiri::XML('<c r="W7" s="49"><f t="shared" ref="W7:W8" si="2">A1+B2</f><v>1</v></c>').root
@@ -38,7 +38,7 @@ describe SharingFormulaCell do
   end
   
   it "it should cope if it is sharing only with itself" do
-    worksheet = mock(:worksheet,:class_name => 'Sheet1')
+    worksheet = mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1',:to_s => 'sheet1')
     sharing_cell = SharingFormulaCell.new(
       worksheet,
       Nokogiri::XML('<c r="W7" s="49"><f t="shared" ref="W7" si="2">A1+B2</f><v>1</v></c>').root
@@ -49,7 +49,7 @@ describe SharingFormulaCell do
   end
   
   it "it should cope if it is sharing to a formula that doesn't exist" do
-    worksheet = mock(:worksheet,:class_name => 'Sheet1')
+    worksheet = mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1',:to_s => 'sheet1')
     sharing_cell = SharingFormulaCell.new(
       worksheet,
       Nokogiri::XML('<c r="W7" s="49"><f t="shared" ref="W7:W8" si="2">A1+B2</f><v>1</v></c>').root
@@ -61,7 +61,7 @@ describe SharingFormulaCell do
   end
   
   it "it should cope if it is sharing with a cell that has its own formula" do
-    worksheet = mock(:worksheet,:class_name => 'Sheet1')
+    worksheet = mock(:worksheet,:name => 'sheet1', :class_name => 'Sheet1',:to_s => 'sheet1')
     sharing_cell = SharingFormulaCell.new(
       worksheet,
       Nokogiri::XML('<c r="W7" s="49"><f t="shared" ref="W7:W8" si="2">A1+B2</f><v>1</v></c>').root

@@ -11,7 +11,7 @@ simple_worksheet_ruby =<<END
 # coding: utf-8
 # Outputs
 class Sheet1 < Spreadsheet
-  def a1; @a1 ||= excel_if(a2=="Hello","hello",sheet2.b4); end
+  def a1; @a1 ||= excel_if(excel_comparison(a2,"==","Hello"),"hello",sheet2.b4); end
   def a2; "A shared string"; end
 end
 
@@ -46,7 +46,7 @@ named_reference_simple_worksheet_ruby =<<END
 # coding: utf-8
 # Outputs
 class Sheet1 < Spreadsheet
-  def a1; @a1 ||= excel_if(a2=="Hello","hello",sheet2.b4); end
+  def a1; @a1 ||= excel_if(excel_comparison(a2,"==","Hello"),"hello",sheet2.b4); end
   def a2; "A shared string"; end
   def reference_one; sheet2.a1; end
 end

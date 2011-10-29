@@ -22,7 +22,7 @@ module RubyFromExcel
     return "" unless $DEBUG == true
     file_name = "#{name.to_s}-debug.txt"
     @files ||= {}
-    file = @files[file_name] ||= File.open(file_name.to_s,'w')
+    file = @files[file_name] ||= File.open(file_name,'w')
     file.puts message
   end
   

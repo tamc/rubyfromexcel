@@ -74,6 +74,7 @@ describe DependencyBuilder do
       @worksheet1.should_receive(:cell).with('c2').and_return(mock(:cell,:value_for_including => 'indirectvectors2',:can_be_replaced_with_value? => true))
       dependencies_for('INDIRECT(C2&"["&C1&"]")').should == ["sheet1.c1","sheet1.c2","sheet2.a2", "sheet2.a3", "sheet2.a4", "sheet2.a5", "sheet2.a6", "sheet2.a7", "sheet2.a8", "sheet2.a9"]
    end
+   
    it "should be able to deal with awkward combinations of tables and indirects" do
      @worksheet1.should_receive(:cell).with('c102').twice.and_return(mock(:cell,:value_for_including => 'XVI.a',:can_be_replaced_with_value? => true))
      @worksheet1.should_receive(:cell).with('a1').and_return(mock(:cell,:value_for_including => '2050',:can_be_replaced_with_value? => true))
@@ -84,5 +85,16 @@ describe DependencyBuilder do
      dependencies_for(%q|INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Matrix")|).should == ["sheet1.a20", "sheet1.a21", "sheet1.a22", "sheet1.c1"] 
      dependencies_for(%q|MATCH([Vector], INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Matrix"), 0)|).should == ["sheet1.a20", "sheet1.a21", "sheet1.a22", "sheet1.c1", "sheet1.c30"]
    end
-    
+   
+   it "Should be able to deal with a new combination of sumproduct, table and indirect that is causing a bug" do
+     workbook = mock(:workbook)
+     worksheet = mock(:worksheet,:name => "sheet13", :to_s => 'sheet13', :workbook => workbook)
+     workbook.stub!(:worksheets => {'sheet13' => worksheet})
+     worksheet.should_receive(:cell).with('d386').and_return(mock(:cell,:value_for_including => 'PM10',:can_be_replaced_with_value? => true))
+     worksheet.should_receive(:cell).with('g385').and_return(mock(:cell,:value_for_including => '2010',:can_be_replaced_with_value? => true))
+     cell = mock(:cell,:worksheet => worksheet, :reference => Reference.new('f386',worksheet))
+     @builder.formula_cell = cell
+     Table.new(worksheet,"EF.I.a.PM10","C90:O94",["Code", "Module", "Vector", "2007", "2010", "2015", "2020", "2025", "2030", "2035", "2040", "2045", "2050"],0)
+     dependencies_for('SUMPRODUCT(G$378:G$381,INDIRECT("EF.I.a."&$D386&"["&G$385&"]"))').should ==  ["sheet1.d386", "sheet1.g378", "sheet1.g379", "sheet1.g380", "sheet1.g381", "sheet1.g385", "sheet13.g91", "sheet13.g92", "sheet13.g93", "sheet13.g94"]
+   end
 end

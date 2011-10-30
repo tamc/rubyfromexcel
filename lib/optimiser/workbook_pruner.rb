@@ -48,6 +48,8 @@ module RubyFromExcel
         sheet.cells.delete_if do |reference,cell|
           if cells_to_keep.has_key?(cell.to_s)
             false
+          #elsif cell.must_keep?
+          #  false
           else
             RubyFromExcel.debug(:pruning_delete,"#{name}.#{reference}")
             true

@@ -29,7 +29,7 @@ describe ArrayingFormulaCell do
   
   it "should know its dependencies, and also apply them to the cells that it arrays with" do
     array_cell = mock(:array_cell)
-    array_cell.should_receive(:dependencies=).with(["sheet1.a3", "sheet1.a4", "sheet1.a5", "sheet1.a6", "sheet1.d2", "sheet1.e2"])
+    array_cell.should_receive(:dependencies=).with((["sheet1.b3", "sheet1.a3", "sheet1.a4", "sheet1.a5", "sheet1.a6", "sheet1.d2", "sheet1.e2"]))
     @worksheet.should_receive(:cell).with('c3').and_return(array_cell)
     @arraying_cell.work_out_dependencies
     @arraying_cell.dependencies.should == ["sheet1.a3", "sheet1.a4", "sheet1.a5", "sheet1.a6", "sheet1.d2", "sheet1.e2"]

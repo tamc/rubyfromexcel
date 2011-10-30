@@ -39,9 +39,10 @@ module RubyFromExcel
   
     def work_out_dependencies
       super
+      dependencies_for_array_formula = [reference.to_ruby(true)] + self.dependencies
       each_array_formula do |array_formula_reference,array_cell|
         next unless array_cell
-        array_cell.dependencies = self.dependencies
+        array_cell.dependencies = dependencies_for_array_formula
       end
     end
   

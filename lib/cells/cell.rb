@@ -23,7 +23,7 @@ module RubyFromExcel
     def work_out_dependencies
       self.dependencies = []
     end
-  
+    
     def to_ruby(r = RubyScriptWriter.new)
       r.put_simple_method reference.to_ruby, ruby_value
       r.to_s

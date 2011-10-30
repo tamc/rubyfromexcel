@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
   s.add_dependency('rubyscriptwriter','>= 0.0.1')
   s.add_dependency('rubypeg','>= 0.0.2')
   s.required_ruby_version = "~>1.9.1"
-  s.version = '0.0.14'
+  s.version = '0.0.15'
   s.author = "Thomas Counsell, Green on Black Ltd"
   s.email = "ruby-from-excel@greenonblack.com"
   s.homepage = "http://github.com/tamc/rubyfromexcel"

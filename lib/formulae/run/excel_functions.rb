@@ -144,6 +144,7 @@ module RubyFromExcel
     end
     
     def pmt(rate,periods,principal)
+      return -(principal / periods) if rate == 0
       -principal*(rate*((1+rate)**periods))/(((1+rate)**periods)-1)
     end
     

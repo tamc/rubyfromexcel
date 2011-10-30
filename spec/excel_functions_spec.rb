@@ -304,6 +304,7 @@ describe "pmt" do
   it "should calculate the monthly payment required for a given principal, interest rate and loan period" do
     FunctionTest.pmt(0.1,10,100).should be_within(0.01).of(-16.27)
     FunctionTest.pmt(0.0123,99.1,123.32).should be_within(0.01).of(-2.159)
+    FunctionTest.pmt(0,2,10).should be_within(0.01).of(-5)
   end
 end
 

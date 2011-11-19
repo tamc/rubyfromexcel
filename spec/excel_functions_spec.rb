@@ -24,6 +24,11 @@ describe "set" do
     v.a1.should == 99.0
     v.set('a1',nil)
     v.a1.should == 10.0
+    v = ValueSetTest.new
+    v.set('a1',99.0)
+    v.a1.should == 99.0
+    v = ValueSetTest.new
+    v.a1.should == 10.0
   end
 end
 

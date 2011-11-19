@@ -75,7 +75,7 @@ module RubyFromExcel
       instance_variable_name = "@#{cell}"
       unless instance_variable_defined?(instance_variable_name)
         self.class.class_eval do
-          if method_defined?(cell)
+          if method_defined?(cell) && !method_defined?("old_#{cell}")
             alias_method "old_#{cell}", cell
             define_method(cell) do
               instance_variable_get(instance_variable_name) || self.send("old_#{cell}")

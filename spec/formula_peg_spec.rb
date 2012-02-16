@@ -1,3 +1,4 @@
+# encoding: utf-8
 require_relative 'spec_helper'
 
 require 'textpeg2rubypeg'
@@ -199,4 +200,16 @@ INDEX(INDIRECT(BI$19&"!Year.Matrix"),MATCH("Subtotal.Consumption",INDIRECT(BI$19
   it "parses tricky indirect match table combos" do
     Formula.parse(%q|INDEX(INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Matrix"), MATCH("Subtotal."&$A$2, INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Modules"), 0), MATCH([Vector], INDIRECT("'"&XVI.a.Inputs[#Headers]&"'!Year.Vectors"), 0))|).to_ast.should == [:formula, [:function, "INDEX", [:function, "INDIRECT", [:string_join, [:string, "'"], [:table_reference, "XVI.a.Inputs", "#Headers"], [:string, "'!Year.Matrix"]]], [:function, "MATCH", [:string_join, [:string, "Subtotal."], [:cell, "$A$2"]], [:function, "INDIRECT", [:string_join, [:string, "'"], [:table_reference, "XVI.a.Inputs", "#Headers"], [:string, "'!Year.Modules"]]], [:number, "0"]], [:function, "MATCH", [:local_table_reference, "Vector"], [:function, "INDIRECT", [:string_join, [:string, "'"], [:table_reference, "XVI.a.Inputs", "#Headers"], [:string, "'!Year.Vectors"]]], [:number, "0"]]]]
   end
+  
+  it "parses chinese characters" do
+    Formula.parse("结果!A1").to_ast.should == [:formula, [:sheet_reference, '结果', [:cell, 'A1']]]
+    Formula.parse("'结果'!A1").to_ast.should == [:formula, [:quoted_sheet_reference, '结果', [:cell, 'A1']]]
+    Formula.parse("结果[2007]").to_ast.should == [:formula,[:table_reference,'结果','2007']]
+    Formula.parse("结果[结果]").to_ast.should == [:formula,[:table_reference,'结果','结果']]
+    Formula.parse("结果[[结果],[结果]]").to_ast.should == [:formula,[:table_reference,'结果','[结果],[结果]']]
+    Formula.parse("Hello!w").to_ast.should == [:formula, [:sheet_reference, 'Hello', [:named_reference, 'w']]]
+    Formula.parse("结果!果").to_ast.should == [:formula, [:sheet_reference, '结果', [:named_reference, '果']]]
+    Formula.parse("结果").to_ast.should == [:formula, [:named_reference, '结果']]
+  end
+  
 end

@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'rubypeg'
 
 class Formula < RubyPeg
@@ -111,7 +112,7 @@ class Formula < RubyPeg
   end
   
   def table_name
-    terminal(/[.a-zA-Z0-9_]+/)
+    terminal(/[.\p{Word}]+/)
   end
   
   def range_structured_reference
@@ -132,7 +133,7 @@ class Formula < RubyPeg
   
   def named_reference
     node :named_reference do
-      terminal(/[#a-zA-Z][\w_.!]+/)
+      terminal(/[\p{Word}#][\p{Word}.!]*/)
     end
   end
   
@@ -144,7 +145,7 @@ class Formula < RubyPeg
   
   def sheet_reference
     node :sheet_reference do
-      terminal(/[a-zA-Z0-9][\w_.]+/) && ignore { terminal("!") } && (sheetless_reference || named_reference)
+      terminal(/[\p{Word}][\p{Word}_.]+/) && ignore { terminal("!") } && (sheetless_reference || named_reference)
     end
   end
   

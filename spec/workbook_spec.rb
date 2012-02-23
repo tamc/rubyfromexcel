@@ -103,9 +103,9 @@ class Spreadsheet
     @workbook_tables = {}
   end
 
-  def one_and2; sheet2.a('a2','a3'); end
+  def oneand2; sheet2.a('a2','a3'); end
   def reference_2; sheet2.a3; end
-  def reference_one; sheet2.a2; end
+  def referenceone; sheet2.a2; end
 end
 
 Dir[File.join(File.dirname(__FILE__),"sheets/","sheet*.rb")].each {|f| Spreadsheet.autoload(File.basename(f,".rb").capitalize,f)}

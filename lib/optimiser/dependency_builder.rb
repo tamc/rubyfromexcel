@@ -69,8 +69,8 @@ module RubyFromExcel
     end
   
     def reference_for_name(name)
-      worksheet.named_references[name.to_method_name] || 
-      workbook.named_references[name.to_method_name] || 
+      worksheet.named_references[name.downcase] || 
+      workbook.named_references[name.downcase] || 
       (raise Exception.new("#{name} in #{formula_cell} not found"))
     end
   

@@ -6,8 +6,8 @@ describe DependencyBuilder do
     SheetNames.instance.clear
     SheetNames.instance['Other Sheet'] = 'sheet2'
     @workbook = mock(:workbook, :named_references => {'named_cell' => 'sheet2.z10', 'named_cell2' => "sheet2.a('z10','ab10')"})
-    @worksheet1 = mock(:worksheet, :to_s => 'sheet1', :workbook => @workbook, :named_references => {'named_cell' => 'sheet1.a1','this_year' => 'sheet1.a1'})
-    @worksheet2 = mock(:worksheet, :to_s => 'sheet2', :workbook => @workbook, :named_references => {'year_matrix' => "sheet1.a('a20','a22')" })
+    @worksheet1 = mock(:worksheet, :to_s => 'sheet1', :workbook => @workbook, :named_references => {'named_cell' => 'sheet1.a1','this.year' => 'sheet1.a1'})
+    @worksheet2 = mock(:worksheet, :to_s => 'sheet2', :workbook => @workbook, :named_references => {'year.matrix' => "sheet1.a('a20','a22')" })
     @workbook.stub!(:worksheets => {'sheet1' => @worksheet1, 'sheet2' => @worksheet2 })
     @cell = mock(:cell,:worksheet => @worksheet1, :reference => Reference.new('c30',@worksheet1))
     @builder = DependencyBuilder.new(@cell)

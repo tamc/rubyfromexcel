@@ -82,19 +82,19 @@ describe FormulaBuilder do
     worksheet = mock(:worksheet)
     workbook = mock(:workbook)
     @builder.formula_cell = mock(:cell,:worksheet => worksheet)
-    worksheet.should_receive(:named_references).and_return({"one_and2"=>'sheet1.a(\'a1\',\'f10\')'})
+    worksheet.should_receive(:named_references).and_return({"oneand2"=>'sheet1.a(\'a1\',\'f10\')'})
     ruby_for("SUM(OneAnd2)").should == "sum(sheet1.a('a1','f10'))"
     worksheet.should_receive(:named_references).and_return({})
     worksheet.should_receive(:workbook).and_return(workbook)
-    workbook.should_receive(:named_references).and_return({"reference_one" => "sheet10.a1"})
+    workbook.should_receive(:named_references).and_return({"referenceone" => "sheet10.a1"})
     ruby_for("ReferenceOne").should == "sheet10.a1"
-    worksheet.should_receive(:named_references).and_return({"one_and2"=>'sheet1.a(\'a1\',\'f10\')'})
+    worksheet.should_receive(:named_references).and_return({"oneand2"=>'sheet1.a(\'a1\',\'f10\')'})
     worksheet.should_receive(:workbook).and_return(workbook)
-    workbook.should_receive(:named_references).and_return({"reference_one" => "sheet10.a1"})
+    workbook.should_receive(:named_references).and_return({"referenceone" => "sheet10.a1"})
     ruby_for("Reference.2").should == ":name"
-    worksheet.should_receive(:named_references).and_return({"one_and2"=>'sheet1.a(\'a1\',\'f10\')'})
+    worksheet.should_receive(:named_references).and_return({"oneand2"=>'sheet1.a(\'a1\',\'f10\')'})
     worksheet.should_receive(:workbook).and_return(workbook)
-    workbook.should_receive(:named_references).and_return({"reference_one" => "sheet10.a1","ef_natural_gas_n2o"=> "sheet10.a1"})
+    workbook.should_receive(:named_references).and_return({"referenceone" => "sheet10.a1","ef.naturalgas.n2o"=> "sheet10.a1"})
     ruby_for("-($AG70+$X70)*EF.NaturalGas.N2O").should == "-(ag70+x70)*sheet10.a1"
   end
   
@@ -116,7 +116,7 @@ describe FormulaBuilder do
   
   it "should convert table names inside indirects" do
     workbook = mock(:workbook, :named_references => {'named_cell' => 'sheet2.z10', 'named_cell2' => "sheet2.a('z10','ab10')"})
-    worksheet1 = mock(:worksheet,:name => "sheet1", :to_s => 'sheet1', :workbook => workbook, :named_references => {'named_cell' => 'sheet1.a1','this_year' => 'sheet1.a1'})
+    worksheet1 = mock(:worksheet,:name => "sheet1", :to_s => 'sheet1', :workbook => workbook, :named_references => {'named_cell' => 'sheet1.a1','this.year' => 'sheet1.a1'})
     worksheet2 = mock(:worksheet,:name => "sheet2", :to_s => 'sheet2', :workbook => workbook, :named_references => {})
     workbook.stub!(:worksheets => {'sheet1' => worksheet1, 'sheet2' => worksheet2 })
     worksheet1.should_receive(:cell).with('c102').twice.and_return(mock(:cell,:value_for_including => 'XVI.a',:can_be_replaced_with_value? => true))
@@ -212,7 +212,7 @@ describe FormulaBuilder do
     worksheet.should_receive(:cell).with('a1').and_return(cell)
     ruby_for('INDIRECT(sheet100!A1&"!A1")').should == "sheet100.a1"
     
-    worksheet.should_receive(:named_references).and_return({"this_year" => 'sheet1.a1'})
+    worksheet.should_receive(:named_references).and_return({"this.year" => 'sheet1.a1'})
     worksheet.should_receive(:workbook).and_return(workbook)
     workbook.should_receive(:worksheets).and_return({'sheet1' => worksheet})
     worksheet.should_receive(:cell).with('a1').and_return(nil)

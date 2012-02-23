@@ -1,6 +1,6 @@
 module TerminalNode
   def to_method_name
-    self.gsub(/([a-z])([A-Z])/,'\1_\2').downcase.gsub(/[^a-z0-9_]/,'_')
+    self.gsub(/([a-z])([A-Z])/,'\1_\2').downcase.gsub(/[^\p{word}]/,'_')
   end  
 end
 

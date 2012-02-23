@@ -42,7 +42,7 @@ module RubyFromExcel
   
     def work_out_named_references_from(xml)
       xml.css('definedName').each do |defined_name_xml|
-        reference_name = defined_name_xml['name'].gsub(/([a-z])([A-Z])/,'\1_\2').downcase.gsub(/[^a-z0-9_]/,'_')
+        reference_name = defined_name_xml['name'].downcase # .gsub(/[^a-z0-9_]/,'_')
         reference_value = defined_name_xml.content
         if reference_value.start_with?('[')
           puts "Sorry, #{reference_name} (#{reference_value}) has a link to an external workbook. Skipping."
@@ -97,7 +97,7 @@ module RubyFromExcel
             r.puts "@workbook_tables = #{Hash[Table.tables.sort]}"
           end
           named_references.each do |name,reference|
-            r.put_simple_method name, reference
+            r.put_simple_method name.downcase.gsub(/[^\p{word}]/,'_'), reference
           end
         end
       end

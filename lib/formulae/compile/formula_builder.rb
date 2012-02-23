@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 module TerminalNode
   def to_method_name
     self.gsub(/([a-z])([A-Z])/,'\1_\2').downcase.gsub(/[^\p{word}]/,'_')

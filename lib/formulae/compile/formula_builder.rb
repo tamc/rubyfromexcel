@@ -73,8 +73,8 @@ module RubyFromExcel
     def named_reference(name, worksheet = nil)
       worksheet ||= formula_cell ? formula_cell.worksheet : nil
       return ":name" unless worksheet
-      worksheet.named_references[name.to_method_name] || 
-      worksheet.workbook.named_references[name.to_method_name] ||
+      worksheet.named_references[name.downcase] || 
+      worksheet.workbook.named_references[name.downcase] ||
       ":name"
     end
   

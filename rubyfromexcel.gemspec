@@ -2,9 +2,9 @@ Gem::Specification.new do |s|
   s.name = "rubyfromexcel"
   s.add_dependency('nokogiri','>= 1.4.1')
   s.add_dependency('rubyscriptwriter','>= 0.0.1')
-  s.add_dependency('rubypeg','>= 0.0.2')
+  s.add_dependency('rubypeg','>= 0.0.4')
   s.required_ruby_version = "~>1.9.1"
-  s.version = '0.0.21'
+  s.version = '0.0.22'
   s.author = "Thomas Counsell, Green on Black Ltd"
   s.email = "ruby-from-excel@greenonblack.com"
   s.homepage = "http://github.com/tamc/rubyfromexcel"

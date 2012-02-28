@@ -2,6 +2,8 @@ require_relative 'spec_helper'
 
 describe Worksheet do  
 
+SheetNames.instance['Outputs'] = 'sheet1'
+
 simple_worksheet_xml =<<END
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:mv="urn:schemas-microsoft-com:mac:vml" mc:Ignorable="mv" mc:PreserveAttributes="mv:*"><dimension ref="A1:A2"/><sheetViews><sheetView view="pageLayout" workbookViewId="0"/></sheetViews><sheetFormatPr baseColWidth="10" defaultRowHeight="13"/><sheetData><row r="1" spans="1:1"><c r="A1" t="str"><f>IF(A2="Hello","hello",Sheet2!B4)</f><v>hello</v></c></row><row r="2" spans="1:1"><c r="A2" t="s"><v>24</v></c></row></sheetData><sheetCalcPr fullCalcOnLoad="1"/><phoneticPr fontId="2" type="noConversion"/><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/><pageSetup paperSize="10" orientation="portrait" horizontalDpi="4294967292" verticalDpi="4294967292"/><extLst><ext xmlns:mx="http://schemas.microsoft.com/office/mac/excel/2008/main" uri="http://schemas.microsoft.com/office/mac/excel/2008/main"><mx:PLV Mode="1" OnePage="0" WScale="0"/></ext></extLst></worksheet>

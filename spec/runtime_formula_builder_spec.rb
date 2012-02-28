@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require_relative 'spec_helper'
 
 describe RuntimeFormulaBuilder, "For parsing indirect references" do
@@ -49,6 +51,7 @@ describe RuntimeFormulaBuilder, "For parsing indirect references" do
     ruby_for("SUM(OneAnd2)").should == "sum(one_and2)"
     ruby_for("ReferenceOne").should == "reference_one"
     ruby_for("Reference.2").should == "reference_2"
+    ruby_for("阿三").should == "阿三"
     ruby_for("-($AG70+$X70)*EF.NaturalGas.N2O").should == "-(ag70+x70)*ef_natural_gas_n2o"
   end
 

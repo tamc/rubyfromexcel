@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 module RubyFromExcel
   class Worksheet
   
@@ -86,7 +88,7 @@ module RubyFromExcel
         end
         if workbook.indirects_used
           named_references.each do |name,reference|
-            r.put_simple_method name, reference
+            r.put_simple_method name.downcase.gsub(/[^\p{word}]/,'_'), reference
           end
         end
       end

@@ -60,7 +60,7 @@ it 'should add any named references that apply just to this sheet' do
   SharedStrings.instance[24] = 'A shared string'
   worksheet = Worksheet.new(Nokogiri::XML(simple_worksheet_xml))
   worksheet.workbook = mock(:workbook,:indirects_used => true)  
-  worksheet.named_references['reference_one'] = 'sheet2.a1'
+  worksheet.named_references['reference.one'] = 'sheet2.a1'
   worksheet.name = 'sheet1'
   worksheet.to_ruby.should == named_reference_simple_worksheet_ruby  
 end
